@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { QUESTION_DATABASE } from '../src/data/questionDatabase'
 import { editDistance, evaluateAnswer, matchKey, normalize } from '../src/lib/answers'
-import { canCommitAnswer } from '../src/lib/game'
+import { calculateScore, canCommitAnswer, countCorrectAnswers } from '../src/lib/game'
 import {
   ALL_CATEGORIES_ID,
   CATEGORY_GROUPS,
@@ -26,7 +26,7 @@ import {
   validateQuestionData,
 } from '../src/lib/questions'
 import { RARITY_TIERS } from '../src/lib/rarity'
-import type { Question, QuestionDifficulty } from '../src/types'
+import type { AnswerResult, Question, QuestionDifficulty } from '../src/types'
 
 let failures = 0
 function check(name: string, ok: boolean, detail = '') {
@@ -60,19 +60,24 @@ check('C uncertain -> suggestion, not accepted', kind(africa, 'Eswtnini') === 's
 for (const s of ['banana', 'Brazil', 'Kenya', '', '   ', 'Swit'])
   check(`none: "${s}"`, kind(europe, s) === 'none')
 check('different valid answer is not a typo (Niger)', kind(africa, 'Niger') === 'none')
-let shortChecked = 0, shortBad = 0
+let shortChecked = 0, shortAutoAccepted = 0
 for (const q of QUESTION_DATABASE) {
   for (const a of q.answers) {
     if (/^[A-Za-z]{4}$/.test(a.text)) {
       shortChecked++
       const k = kind(q, a.text.slice(0, 3) + (a.text.endsWith('x') ? 'q' : 'x'))
-      if (k === 'typo' || k === 'suggest') shortBad++
+      // One edited letter may produce a confirmation prompt, never free points.
+      if (k === 'typo') shortAutoAccepted++
     }
   }
 }
-check('4-letter answers are exact-only (no fuzzy)', shortChecked > 0 && shortBad === 0, `(${shortChecked} checked)`)
+check(
+  '4-letter answers are never auto-corrected (suggestions allowed)',
+  shortChecked > 0 && shortAutoAccepted === 0,
+  `(${shortChecked} checked)`,
+)
 
-// --- DB-wide sweep: no answer/alias that is valid anywhere is ever fuzzy-matched elsewhere
+// --- DB-wide sweep: no valid answer/alias from another question is ever automatically accepted
 let leaks = 0
 const allVariants = new Set<string>()
 for (const q of QUESTION_DATABASE) for (const a of q.answers) for (const v of [a.text, ...(a.aliases ?? [])]) allVariants.add(v)
@@ -80,9 +85,9 @@ for (const q of QUESTION_DATABASE.slice(0, 60))
   for (const v of allVariants) {
     const r = evaluateAnswer(q, v)
     const valid = q.answers.some((a) => [a.text, ...(a.aliases ?? [])].some((x) => evaluateAnswer(q, x).kind === 'exact' && x === v))
-    if (!valid && r.kind !== 'exact' && r.kind !== 'none') leaks++
+    if (!valid && r.kind === 'typo') leaks++
   }
-check('no valid answer from another question leaks via fuzzy matching', leaks === 0, `(${leaks} leaks, ${allVariants.size} variants)`)
+check('no valid answer from another question is auto-corrected elsewhere', leaks === 0, `(${leaks} leaks, ${allVariants.size} variants)`)
 
 // every accepted answer matches itself exactly
 let selfFail = 0
@@ -326,8 +331,11 @@ check(
 )
 check('recognition: UK abbreviation', answerOf(council, 'UK')?.text === 'United Kingdom')
 
-// 11: short answers stay strict.
-check('strict short answers: Lion is not corrected from Loin', kind(bigCat, 'Loin') === 'none')
+// 11: short answers stay strict but may prompt.
+check(
+  'short answers: transposition prompts instead of auto-accepting (Loin -> Lion)',
+  kind(bigCat, 'Loin') === 'suggest',
+)
 check('strict short answers: Bat is not corrected from Cat', kind(echolocation, 'Cat') === 'none')
 check('strict short answers: Cat is not corrected from Cats', kind(echolocation, 'Cats') === 'none')
 
@@ -439,6 +447,167 @@ check('valid answers: exact alias beats fuzzy', answerOf(africa, 'Nigeria')?.tex
 // Numbers (years, counts) are never fuzzy-matched.
 check('numbers: exact numeric answer works', kind(pixar, 'Toy Story 3') === 'exact')
 check('numbers: neighbouring number is rejected', kind(pixar, 'Toy Story 2') === 'none')
+
+/* -------------------------------------------------------------------------- */
+/* Short answers, clarifications, aliases and scoring integrity               */
+/* -------------------------------------------------------------------------- */
+
+const southAmerica = byPrompt('Name a country in South America.')
+const pollinator = byPrompt('Name an insect that can pollinate flowers.')
+const fermented = byPrompt('Name a fermented food.')
+const dogFamily = byPrompt('Name a member of the dog family, Canidae.')
+const arabLeague = byPrompt('Name a country that is a member of the Arab League.')
+const g7 = byPrompt('Name a member country of the G7.')
+const populous = byPrompt('Name a country with a population over 100 million.')
+const carnival = byPrompt('Name a country that celebrates Carnival before Lent.')
+const buddhism = byPrompt('Name a country where Buddhism is the majority religion.')
+const tea = byPrompt('Name a country where tea is a central part of daily culture.')
+const asean = byPrompt('Name a country that is a member of ASEAN.')
+const independence = byPrompt('Name a country that gained independence in 1960.')
+const baltic = byPrompt('Name a country with a coast on the Baltic Sea.')
+const euro = byPrompt('Name a country that uses the euro as its currency.')
+
+// 18: 3-letter answers may prompt, never auto-accept, and never pull in unrelated answers.
+check(
+  'short suggestion: "Bta" offers Bat for confirmation',
+  kind(echolocation, 'Bta') === 'suggest' && optionTexts(echolocation, 'Bta').includes('Bat'),
+)
+check(
+  'short suggestion: "Dgo" offers Domestic dog through its Dog alias',
+  kind(dogFamily, 'Dgo') === 'suggest' && optionTexts(dogFamily, 'Dgo').includes('Domestic dog'),
+)
+check(
+  'short suggestion: unrelated 3-letter typos stay unrecognised',
+  kind(echolocation, 'Cta') === 'none' && kind(echolocation, 'Dgo') === 'none',
+)
+
+// 19: a typo that is itself a valid answer elsewhere is clarified, never rewritten.
+check(
+  'character swap: "Linear C" offers Linear A / Linear B',
+  kind(linearSystems, 'Linear C') === 'suggest' &&
+    optionTexts(linearSystems, 'Linear C').includes('Linear A') &&
+    optionTexts(linearSystems, 'Linear C').includes('Linear B'),
+)
+check(
+  'valid elsewhere: "Bee" on a fermented food is offered as Beer, not auto-credited',
+  kind(fermented, 'Bee') === 'suggest' && optionTexts(fermented, 'Bee').includes('Beer'),
+)
+check(
+  'valid elsewhere: "Beer" on pollinators is offered as Bee, not auto-credited',
+  kind(pollinator, 'Beer') === 'suggest' && optionTexts(pollinator, 'Beer').includes('Bee'),
+)
+check(
+  'valid elsewhere: "Child" clarifies to Chile while exact Chile wins',
+  kind(southAmerica, 'Child') === 'suggest' &&
+    optionTexts(southAmerica, 'Child').includes('Chile') &&
+    kind(southAmerica, 'Chile') === 'exact',
+)
+check(
+  'resembling answers: "Iran" is clarified to Iraq on the Arab League question',
+  kind(arabLeague, 'Iran') === 'suggest' && optionTexts(arabLeague, 'Iran').includes('Iraq'),
+)
+check(
+  'aliases do not leak across questions (Holland / Burma / DR Congo not in G7)',
+  kind(g7, 'Holland') === 'none' && kind(g7, 'Burma') === 'none' && kind(g7, 'DR Congo') === 'none',
+)
+
+// 20: abbreviations and alternative spellings share the canonical answer and rarity.
+const g7UK = answerOf(g7, 'United Kingdom')
+const g7US = answerOf(g7, 'United States')
+check(
+  'UK aliases resolve to one canonical answer with its rarity',
+  g7UK !== null &&
+    ['UK', 'Britain', 'Great Britain'].every((input) => {
+      const answer = answerOf(g7, input)
+      return answer?.text === 'United Kingdom' && answer.points === g7UK.points
+    }),
+)
+check(
+  'US aliases resolve to one canonical answer with its rarity',
+  g7US !== null &&
+    ['USA', 'America', 'United States of America'].every((input) => {
+      const answer = answerOf(g7, input)
+      return answer?.text === 'United States' && answer.points === g7US.points
+    }),
+)
+const populousUS = answerOf(populous, 'United States')
+check(
+  'US aliases resolve on other questions too',
+  populousUS !== null &&
+    ['USA', 'America', 'United States of America'].every((input) => {
+      const answer = answerOf(populous, input)
+      return answer?.text === 'United States' && answer.points === populousUS.points
+    }),
+)
+check(
+  'Burma resolves to Myanmar',
+  answerOf(buddhism, 'Burma')?.text === 'Myanmar' && answerOf(asean, 'Burma')?.text === 'Myanmar',
+)
+check(
+  'Holland resolves to the Netherlands',
+  answerOf(carnival, 'Holland')?.text === 'Netherlands' &&
+    answerOf(euro, 'Holland')?.text === 'Netherlands',
+)
+check(
+  'DRC resolves to the Democratic Republic of the Congo',
+  ['DRC', 'DR Congo'].every(
+    (input) => answerOf(independence, input)?.text === 'Democratic Republic of the Congo',
+  ),
+)
+check(
+  'Russian Federation resolves to Russia',
+  answerOf(baltic, 'Russian Federation')?.text === 'Russia' &&
+    answerOf(tea, 'Russian Federation')?.text === 'Russia',
+)
+const teaUK = answerOf(tea, 'United Kingdom')
+const teaRussia = answerOf(tea, 'Russian Federation')
+check(
+  'distinct answers keep their own rarity (United Kingdom 10, Russia 30)',
+  teaUK?.text === 'United Kingdom' && teaUK.points === 10 &&
+    teaRussia?.text === 'Russia' && teaRussia.points === 30,
+)
+const britainTypo = evaluateAnswer(tea, 'Britian')
+check(
+  'a misspelled alias keeps the canonical rarity',
+  britainTypo.kind === 'typo' &&
+    britainTypo.answer.text === 'United Kingdom' &&
+    britainTypo.answer.points === 10,
+)
+
+// 21: confirmation is the only scoring path, and it can only score once.
+const beeSuggestion = evaluateAnswer(pollinator, 'Beer')
+const confirmedBee = beeSuggestion.kind === 'suggest' ? beeSuggestion.answer : null
+const confirmedResults: AnswerResult[] = confirmedBee
+  ? [{
+      questionId: pollinator.id,
+      given: 'Beer',
+      matched: confirmedBee,
+      points: confirmedBee.points,
+      timedOut: false,
+      corrected: 'confirmed',
+    }]
+  : []
+const suggestionGame = {
+  phase: 'playing' as const,
+  questionIds: [pollinator.id],
+  questionIndex: 0,
+  questionDeadline: 10_000,
+}
+check(
+  'a pending suggestion is not a scored result',
+  beeSuggestion.kind === 'suggest' && !('matched' in beeSuggestion) && !('points' in beeSuggestion),
+)
+check(
+  'confirmation scores once at its own rarity',
+  confirmedResults.length === 1 &&
+    calculateScore(confirmedResults) === 10 &&
+    countCorrectAnswers(confirmedResults) === 1,
+)
+check(
+  'after confirmation a repeat submit is ignored',
+  canCommitAnswer(suggestionGame, pollinator.id, 9_999, 5_000) &&
+    !canCommitAnswer({ ...suggestionGame, phase: 'feedback' }, pollinator.id, 9_999, 5_000),
+)
 
 // --- expanded database: 500 questions, fixed difficulty split, data integrity
 const EXPECTED_TOTAL = 500

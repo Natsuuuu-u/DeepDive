@@ -192,9 +192,17 @@ export function autoAcceptDistance(length: number): number {
   return 3
 }
 
-/** Largest distance for which we still offer a "Did you mean...?" prompt. */
+/**
+ * Largest distance for which we still offer a "Did you mean...?" prompt.
+ * Two-letter answers stay exact-only: one edit is half the word, so "In" or
+ * "No" would collide with unrelated short answers. Three- and four-letter
+ * answers may suggest a single edit, but `evaluateAnswer` additionally
+ * requires the first letter to agree (or the input to be a real answer
+ * elsewhere) and still never accepts them without confirmation.
+ */
 export function suggestDistance(length: number): number {
-  if (length <= 4) return 0
+  if (length <= 2) return 0
+  if (length <= 4) return 1
   if (length <= 6) return 1
   if (length <= 9) return 2
   if (length <= 14) return 3
@@ -358,8 +366,14 @@ export function evaluateAnswer(question: Question, input: string): AnswerEvaluat
   // Numbers (years, counts) are never fuzzy-matched: 1969 and 1970 are different answers.
   if (/\d/.test(typedBase)) return { kind: 'none' }
 
-  // A different legitimate answer, not a typo.
-  if (typedKeys.some((key) => getKnownAnswerKeys().has(key))) return { kind: 'none' }
+  /*
+   * A typed answer that is legitimate for *some* question must never be
+   * auto-corrected onto this one ("Chile" is not a typo for "Child").
+   * It may still earn a clarification prompt when it is a single edit from
+   * this question's answer (e.g. "Cat" on a question that wants "Bat");
+   * the player has to confirm before any points are awarded.
+   */
+  const typedIsKnownAnswer = typedKeys.some((key) => getKnownAnswerKeys().has(key))
 
   // Best score per accepted answer (across its text and aliases).
   const best = new Map<AcceptedAnswer, Scored>()
@@ -375,12 +389,23 @@ export function evaluateAnswer(question: Question, input: string): AnswerEvaluat
       for (const typedVariant of typedKeys) {
         const distance = editDistance(typedVariant, key)
         if (distance === 0 || distance > maxDistance) continue
+        const firstLetterMatches = typedBase[0] === key[0]
+        /*
+         * Short answers are collision-prone, so only a typo that keeps the
+         * first letter is plausible ("Bta" for "Bat"); otherwise the typed
+         * text must itself be a real answer elsewhere (the clarification
+         * case). Longer answers already pass the length-scaled threshold.
+         */
+        if (length <= 4 && !firstLetterMatches && !typedIsKnownAnswer) continue
+        // A different legitimate answer only gets a clarification when it is
+        // a single edit away; two edits mean the player typed another answer.
+        if (typedIsKnownAnswer && distance > 1) continue
         const scored: Scored = {
           answer: candidate.answer,
           distance,
           keyLength: length,
           answerKey: candidate.key,
-          firstLetterMatches: typedBase[0] === key[0],
+          firstLetterMatches,
           lengthGap: Math.abs(length - typedBase.length),
           commonWordConflict: hasCommonWordConflict(typedKey, candidate.key),
           order: order++,
@@ -407,11 +432,12 @@ export function evaluateAnswer(question: Question, input: string): AnswerEvaluat
 
   // Outcome B only when one answer is clearly the closest, the edit count is
   // within the strict automatic limit, the first letter agrees, and the typed
-  // word is not a real word of its own.
+  // text is neither a real word of its own nor a legitimate answer elsewhere.
   if (
     !ambiguous &&
     top.firstLetterMatches &&
     !top.commonWordConflict &&
+    !typedIsKnownAnswer &&
     top.distance <= autoAcceptDistance(top.keyLength)
   ) {
     return { kind: 'typo', answer: top.answer, distance: top.distance }

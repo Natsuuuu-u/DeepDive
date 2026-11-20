@@ -905,7 +905,7 @@ const countriesAndCultures: QuestionRow[] = [
     ['Norway', 'plankton'],
     ['Sweden', 'too-clever'],
     ['Finland', 'schooler'],
-    ['Russia', 'rare'],
+    ['Russia', 'rare', ['Russian Federation']],
   ]],
   ['Name a country that was part of the former Yugoslavia.', 'hard', 'Yugoslavia began to break apart in 1991.', [
     ['Serbia', 'plankton'],
@@ -919,7 +919,7 @@ const countriesAndCultures: QuestionRow[] = [
     ['Georgia', 'plankton'],
     ['Armenia', 'too-clever'],
     ['Azerbaijan', 'schooler'],
-    ['Russia', 'rare'],
+    ['Russia', 'rare', ['Russian Federation']],
   ]],
   ['Name a country that is a member of the Arab League.', 'hard', 'The Arab League was founded in 1945.', [
     ['Egypt', 'plankton'],
@@ -2050,26 +2050,32 @@ const expandedCultureExpansions: QuestionExpansions = {
       ['Uruguay', 'schooler'],
       ['France', 'schooler'],
       ['Belgium', 'rare'],
-      ['Netherlands', 'rare'],
+      ['Netherlands', 'rare', ['Holland']],
       ['Argentina', 'rare'],
     ],
   },
   cul_005: {
     answers: [
       ['Ireland', 'schooler'],
-      ['Russia', 'schooler'],
+      ['Russia', 'schooler', ['Russian Federation']],
       ['Pakistan', 'rare'],
       ['Azerbaijan', 'deep-cut'],
       ['Mali', 'deep-cut'],
     ],
+    aliases: {
+      'United Kingdom': ['UK', 'Britain', 'Great Britain'],
+    },
   },
   cul_006: {
     answers: [['Laos', 'schooler']],
+    aliases: {
+      Myanmar: ['Burma'],
+    },
   },
   cul_007: {
     answers: [
       ['Portugal', 'too-clever'],
-      ['Netherlands', 'too-clever'],
+      ['Netherlands', 'too-clever', ['Holland']],
       ['Belgium', 'too-clever'],
       ['Austria', 'schooler'],
       ['Greece', 'schooler'],
@@ -2107,6 +2113,9 @@ const expandedCultureExpansions: QuestionExpansions = {
       ['Cyprus', 'deep-cut'],
       ['Trinidad and Tobago', 'deep-cut'],
     ],
+    aliases: {
+      'United Kingdom': ['UK', 'Britain', 'Great Britain'],
+    },
   },
   cul_011: {
     answers: [
@@ -2119,6 +2128,9 @@ const expandedCultureExpansions: QuestionExpansions = {
       ['Togo', 'deep-cut'],
       ['Central African Republic', 'one-in-a-krillion'],
     ],
+    aliases: {
+      'Democratic Republic of the Congo': ['DR Congo', 'DRC'],
+    },
   },
   cul_013: {
     answers: [['Kosovo', 'rare']],
@@ -2139,7 +2151,7 @@ const expandedCultureExpansions: QuestionExpansions = {
     answers: [
       ['Cambodia', 'schooler'],
       ['Laos', 'schooler'],
-      ['Myanmar', 'schooler'],
+      ['Myanmar', 'schooler', ['Burma']],
       ['Timor-Leste', 'rare', ['East Timor']],
     ],
   },
@@ -2364,6 +2376,17 @@ const expandedCultureExpansions: QuestionExpansions = {
       ['Louis Marcoussis', 'deep-cut'],
       ['André Lhote', 'one-in-a-krillion'],
     ],
+  },
+  rec_005: {
+    aliases: {
+      'United States': ['US', 'USA', 'United States of America', 'America'],
+    },
+  },
+  rec_011: {
+    aliases: {
+      'United States': ['US', 'USA', 'United States of America', 'America'],
+      Russia: ['Russian Federation'],
+    },
   },
   art_020: {
     answers: [

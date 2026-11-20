@@ -510,7 +510,7 @@ export function useTriviaGame(mode: GameMode, options: TriviaGameOptions = {}) {
         setSuggestion(null)
         setGame((current) =>
           current.phase === 'playing'
-            ? { ...current, message: `"${value}" is not accepted. Try another answer.` }
+            ? { ...current, message: `“${value}” wasn't recognized. Try another answer.` }
             : current,
         )
     }

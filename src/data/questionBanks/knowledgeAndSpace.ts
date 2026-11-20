@@ -785,7 +785,7 @@ const knowledgeAndSpaceExpansions: QuestionExpansions = {
       France: ['French Republic'],
       Germany: ['Federal Republic of Germany'],
       Italy: ['Italian Republic'],
-      'United Kingdom': ['Great Britain'],
+      'United Kingdom': ['UK', 'Britain', 'Great Britain'],
       'United States': ['US', 'United States of America', 'America'],
     },
   },

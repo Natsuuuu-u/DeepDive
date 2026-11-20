@@ -631,7 +631,7 @@ const worldAndNatureExpansions: QuestionExpansions = {
   geo_003: {
     answers: [
       ['Japan', 'plankton'],
-      ['South Korea', 'plankton'],
+      ['South Korea', 'plankton', ['Republic of Korea']],
       ['Thailand', 'too-clever'],
       ['Vietnam', 'too-clever'],
       ['Mongolia', 'schooler'],
@@ -720,7 +720,7 @@ const worldAndNatureExpansions: QuestionExpansions = {
     answers: [
       ['Germany', 'plankton'],
       ['Denmark', 'plankton'],
-      ['Russia', 'too-clever'],
+      ['Russia', 'too-clever', ['Russian Federation']],
     ],
   },
   geo_014: {
@@ -883,6 +883,9 @@ const worldAndNatureExpansions: QuestionExpansions = {
       ['Maned wolf', 'deep-cut'],
       ['Bush dog', 'one-in-a-krillion'],
     ],
+    aliases: {
+      'Domestic dog': ['Dog'],
+    },
   },
   ani_014: {
     answers: [
