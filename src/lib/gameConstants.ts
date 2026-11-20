@@ -1,0 +1,3 @@
+export const GAME_QUESTION_COUNT = 7
+export const QUESTION_TIME_SECONDS = 25
+export const ANSWER_FEEDBACK_MS = 1500

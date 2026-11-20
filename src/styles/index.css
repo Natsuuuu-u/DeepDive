@@ -1,0 +1,103 @@
+@import '@fontsource/press-start-2p/400.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply overflow-x-hidden bg-ink font-body text-slate-100 antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  :focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-sonar;
+  }
+}
+
+@layer components {
+  .pixel-border {
+    border: 4px solid #0b2a3d;
+    box-shadow:
+      inset 0 0 0 2px rgba(103, 232, 249, 0.25),
+      4px 4px 0 0 rgba(0, 0, 0, 0.55);
+  }
+  .pixel-text {
+    @apply font-pixel uppercase tracking-wide;
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Gentle idle sway for background sea life (disabled via reduced motion). */
+@keyframes dd-sway {
+  0%,
+  100% {
+    transform: translateX(-8px);
+  }
+  50% {
+    transform: translateX(8px);
+  }
+}
+.dd-sway {
+  animation: dd-sway 7s ease-in-out infinite;
+}
+
+/* Fish schools crossing the screen; direction comes from data-direction. */
+@keyframes dd-swim-right {
+  from {
+    transform: translate3d(-30vw, 0, 0);
+  }
+  to {
+    transform: translate3d(115vw, 0, 0);
+  }
+}
+@keyframes dd-swim-left {
+  from {
+    transform: translate3d(115vw, 0, 0);
+  }
+  to {
+    transform: translate3d(-30vw, 0, 0);
+  }
+}
+.dd-swim {
+  animation: dd-swim-right linear infinite;
+  will-change: transform;
+}
+.dd-swim[data-direction='-1'] {
+  animation-name: dd-swim-left;
+}
+
+/* Marine snow drifting down the screen. */
+@keyframes dd-snow {
+  from {
+    transform: translate3d(0, -8vh, 0);
+  }
+  to {
+    transform: translate3d(var(--dd-drift, 0px), 108vh, 0);
+  }
+}
+.dd-snow {
+  animation: dd-snow linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dd-sway,
+  .dd-swim,
+  .dd-snow {
+    animation: none !important;
+  }
+}
