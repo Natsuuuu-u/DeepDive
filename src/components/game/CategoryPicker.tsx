@@ -85,7 +85,7 @@ export default function CategoryPicker({ difficulty, value, onChange, disabled =
             disabled={disabled || !playable}
             title={playable ? category.label : `${category.label}: only ${count} questions on this difficulty`}
             onClick={() => onChange(category.id)}
-            className={`pixel-border flex min-h-[84px] flex-col justify-between gap-2 p-2.5 text-left transition-colors ${
+            className={`pixel-border flex min-h-[92px] touch-manipulation flex-col justify-between gap-2 p-2.5 text-left transition-[background-color,border-color,filter] active:brightness-95 ${
               selected
                 ? 'border-sonar bg-sonar/10'
                 : playable
@@ -101,8 +101,8 @@ export default function CategoryPicker({ difficulty, value, onChange, disabled =
               />
               {selected && <Check size={14} className="text-sonar" aria-hidden />}
             </span>
-            <span>
-              <span className={`pixel-text block text-[8px] leading-relaxed ${selected ? 'text-white' : 'text-slate-200'}`}>
+            <span className="min-w-0">
+              <span className={`pixel-text block text-[9px] leading-snug ${selected ? 'text-white' : 'text-slate-200'}`}>
                 {category.label}
               </span>
               <span className={`mt-1 block text-[11px] ${playable ? 'text-slate-400' : 'text-coral'}`}>

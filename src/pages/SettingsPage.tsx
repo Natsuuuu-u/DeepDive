@@ -8,13 +8,13 @@ import { clearAllProgress } from '@/lib/storage'
 
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-4 py-2">
+    <label className="flex min-h-[52px] cursor-pointer items-center justify-between gap-4 py-1">
       <span className="text-sm">{label}</span>
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-5 w-5 accent-cyan-300"
+        className="h-6 w-6 shrink-0 accent-cyan-300"
       />
     </label>
   )
@@ -43,13 +43,14 @@ export default function SettingsPage() {
           </p>
         </PixelPanel>
 
-        <div className="flex flex-wrap gap-3">
-          <PixelButton variant="secondary" onClick={reset}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <PixelButton variant="secondary" onClick={reset} className="w-full sm:w-auto">
             Reset settings
           </PixelButton>
           <PixelButton
             variant="danger"
             icon={<Trash2 size={14} />}
+            className="w-full sm:w-auto"
             onClick={() => {
               if (window.confirm('Delete all saved runs and statistics?')) {
                 clearAllProgress()

@@ -122,9 +122,13 @@ export default function ResultsScreen({
       animate={{ opacity: 1, y: 0 }}
       className="space-y-4"
     >
-      <GameStage score={score} finalDescent>
-        <div className="flex min-h-[360px] flex-col justify-center sm:min-h-[430px]">
-          <div className="text-center">
+      <GameStage score={score} finalDescent scene={false}>
+        <div className="relative flex min-h-[300px] flex-col justify-center sm:min-h-[430px]">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(2,8,16,0.6),transparent_72%)]"
+          />
+          <div className="relative text-center">
             <motion.div
               initial={{ scale: 0.6, rotate: -12, opacity: 0 }}
               animate={{ scale: 1, rotate: 0, opacity: 1 }}
@@ -156,7 +160,7 @@ export default function ResultsScreen({
             <p className="pixel-text mt-2 text-[8px] text-sonar">{categoryLabel}</p>
           </div>
         </div>
-        <DepthIndicator score={score} variant="compact" className="absolute bottom-3 left-3" />
+        <DepthIndicator score={score} variant="compact" className="absolute bottom-3 left-3 bg-black/30 px-2 py-1" />
       </GameStage>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -166,19 +170,19 @@ export default function ResultsScreen({
           { label: 'Best rarity', value: highestTier ? getTier(highestTier).label : '—' },
           { label: 'Average / question', value: `${averagePoints.toFixed(1)} pts` },
         ].map((item) => (
-          <PixelPanel key={item.label}>
-            <p className="pixel-text text-[8px] text-slate-400">{item.label}</p>
-            <p className="pixel-text mt-3 text-[10px] text-gold">{item.value}</p>
+          <PixelPanel key={item.label} className="p-3 sm:p-4">
+            <p className="pixel-text text-[9px] leading-relaxed text-slate-400">{item.label}</p>
+            <p className="pixel-text mt-3 break-words text-[10px] leading-relaxed text-gold">{item.value}</p>
           </PixelPanel>
         ))}
       </div>
 
       <PixelPanel>
         <h3 className="pixel-text text-[10px] text-sonar">Share this dive</h3>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <PixelButton onClick={handleCopy} icon={<Copy size={14} />}>Copy result</PixelButton>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <PixelButton onClick={handleCopy} icon={<Copy size={14} />} className="w-full sm:w-auto">Copy result</PixelButton>
           {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
-            <PixelButton variant="secondary" onClick={handleNativeShare} icon={<Share2 size={14} />}>
+            <PixelButton variant="secondary" onClick={handleNativeShare} icon={<Share2 size={14} />} className="w-full sm:w-auto">
               Share
             </PixelButton>
           )}
@@ -239,7 +243,7 @@ export default function ResultsScreen({
                       </p>
                     )}
                     <details className="mt-3">
-                      <summary className="cursor-pointer text-xs text-sonar">
+                      <summary className="inline-flex min-h-[44px] cursor-pointer items-center text-xs text-sonar">
                         Reveal accepted answers
                       </summary>
                       <div className="mt-3 space-y-3">
@@ -252,7 +256,7 @@ export default function ResultsScreen({
                               {group.answers.map((answer) => (
                                 <li
                                   key={`${group.rarity}-${answer.text}`}
-                                  className={`border border-white/10 bg-white/5 px-2 py-1 text-xs ${group.tier.color}`}
+                                  className={`break-words border border-white/10 bg-white/5 px-2 py-1 text-xs ${group.tier.color}`}
                                 >
                                   {answer.text}
                                   {answer.aliases?.length ? ` · ${answer.aliases.join(' / ')}` : ''}
@@ -269,9 +273,9 @@ export default function ResultsScreen({
                       </div>
                     </details>
                   </div>
-                  <div className="shrink-0 text-right">
+                  <div className="hidden shrink-0 text-right sm:block">
                     <p className="pixel-text text-[9px] text-white">+{result.points}</p>
-                    {tier && <p className={`mt-2 pixel-text text-[7px] ${tier.color}`}>{tier.label}</p>}
+                    {tier && <p className={`mt-2 pixel-text text-[8px] ${tier.color}`}>{tier.label}</p>}
                   </div>
                 </div>
               </li>
@@ -280,11 +284,11 @@ export default function ResultsScreen({
         </ol>
       </PixelPanel>
 
-      <div className="flex flex-wrap justify-center gap-3">
+      <div className="flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap">
         {onRestart && (
-          <PixelButton onClick={onRestart} icon={<RotateCcw size={14} />}>Dive again</PixelButton>
+          <PixelButton onClick={onRestart} icon={<RotateCcw size={14} />} className="w-full sm:w-auto">Dive again</PixelButton>
         )}
-        {onClose && <PixelButton variant="secondary" onClick={onClose}>Close</PixelButton>}
+        {onClose && <PixelButton variant="secondary" onClick={onClose} className="w-full sm:w-auto">Close</PixelButton>}
       </div>
     </motion.div>
   )

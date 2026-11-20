@@ -38,8 +38,8 @@ function ReviewRows({
               {tier && <span className={`ml-2 ${tier.color}`}>+{result.points} · {tier.label}</span>}
             </p>
             {question && (
-              <details className="mt-2 text-xs text-slate-400">
-                <summary className="cursor-pointer text-sonar">Reveal accepted answers</summary>
+              <details className="mt-3 text-xs text-slate-400">
+                <summary className="inline-flex min-h-[44px] cursor-pointer items-center text-sonar">Reveal accepted answers</summary>
                 <p className="mt-2">
                   {question.answers
                     .map((answer) => [answer.text, ...(answer.aliases ?? [])].join(' / '))
@@ -83,7 +83,7 @@ function RunReview({ run }: { run: RunRecord }) {
         </div>
       </div>
       <details className="mt-3 text-sm text-slate-300">
-        <summary className="cursor-pointer text-sonar">Review {run.results.length} question results</summary>
+        <summary className="inline-flex min-h-[44px] cursor-pointer items-center text-sonar">Review {run.results.length} question results</summary>
         <ReviewRows results={run.results} questionSnapshots={run.questionSnapshots} />
       </details>
     </PixelPanel>
@@ -120,10 +120,10 @@ export default function ArchivePage() {
     }
     return entries
   }, [runs])
-  const tabs: Array<{ id: ArchiveTab; label: string; icon: typeof Archive }> = [
-    { id: 'daily', label: 'Daily Challenges', icon: CalendarDays },
-    { id: 'history', label: 'Game History', icon: History },
-    { id: 'questions', label: 'Question Bank', icon: Library },
+  const tabs: Array<{ id: ArchiveTab; label: string; shortLabel: string; icon: typeof Archive }> = [
+    { id: 'daily', label: 'Daily Challenges', shortLabel: 'Daily', icon: CalendarDays },
+    { id: 'history', label: 'Game History', shortLabel: 'History', icon: History },
+    { id: 'questions', label: 'Question Bank', shortLabel: 'Questions', icon: Library },
   ]
   const filteredRuns = useMemo(() => {
     const filtered = runs.filter((run) => {
@@ -145,7 +145,7 @@ export default function ArchivePage() {
       />
 
       <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="Archive sections">
-        {tabs.map(({ id, label, icon: Icon }) => (
+        {tabs.map(({ id, label, shortLabel, icon: Icon }) => (
           <button
             key={id}
             id={`archive-tab-${id}`}
@@ -154,12 +154,13 @@ export default function ArchivePage() {
             aria-selected={tab === id}
             aria-controls={`archive-panel-${id}`}
             onClick={() => setTab(id)}
-            className={`pixel-text inline-flex items-center gap-2 px-3 py-2 text-[9px] ${
-              tab === id ? 'bg-sonar text-ink' : 'bg-white/10 text-slate-200 hover:bg-white/20'
+            className={`pixel-text inline-flex min-h-[44px] flex-1 touch-manipulation items-center justify-center gap-2 whitespace-nowrap px-2 py-2 text-[9px] sm:flex-none sm:px-3 ${
+              tab === id ? 'bg-sonar text-ink' : 'bg-white/10 text-slate-200 hover:bg-white/20 active:bg-white/25'
             }`}
           >
-            <Icon size={14} aria-hidden />
-            {label}
+            <Icon size={14} aria-hidden className="hidden sm:block" />
+            <span className="sm:hidden">{shortLabel}</span>
+            <span className="hidden sm:inline">{label}</span>
           </button>
         ))}
       </div>
@@ -195,7 +196,7 @@ export default function ArchivePage() {
                       {run && <span className="pixel-text text-xs text-white">{run.score} / 700</span>}
                       <Link
                         to={`/archive/daily/${dateKey}`}
-                        className="pixel-text bg-sky-700 px-3 py-2 text-[9px] text-white hover:bg-sky-600"
+                        className="pixel-text inline-flex min-h-[44px] touch-manipulation items-center bg-sky-700 px-3 py-2 text-[9px] text-white hover:bg-sky-600 active:bg-sky-500"
                       >
                         Practice
                       </Link>
@@ -203,7 +204,7 @@ export default function ArchivePage() {
                   </div>
                   {run && (
                     <details className="mt-3 text-sm text-slate-300">
-                      <summary className="cursor-pointer text-sonar">Review this result</summary>
+                      <summary className="inline-flex min-h-[44px] cursor-pointer items-center text-sonar">Review this result</summary>
                       <RunReview run={run} />
                     </details>
                   )}
@@ -232,10 +233,10 @@ export default function ArchivePage() {
                 type="button"
                 aria-pressed={historyFilter === id}
                 onClick={() => setHistoryFilter(id)}
-                className={`pixel-text px-3 py-2 text-[9px] ${
+                className={`pixel-text min-h-[44px] touch-manipulation px-3 py-2 text-[9px] ${
                   historyFilter === id
                     ? 'bg-sonar text-ink'
-                    : 'bg-white/10 text-slate-200 hover:bg-white/20'
+                    : 'bg-white/10 text-slate-200 hover:bg-white/20 active:bg-white/25'
                 }`}
               >
                 {label}
@@ -285,7 +286,7 @@ export default function ArchivePage() {
                         </span>
                         <Link
                           to={`/archive/game/${encodeURIComponent(run.id)}`}
-                          className="pixel-text bg-sky-700 px-3 py-2 text-[9px] text-white hover:bg-sky-600"
+                          className="pixel-text inline-flex min-h-[44px] touch-manipulation items-center bg-sky-700 px-3 py-2 text-[9px] text-white hover:bg-sky-600 active:bg-sky-500"
                         >
                           Open results
                         </Link>
@@ -304,14 +305,14 @@ export default function ArchivePage() {
           <p className="mb-3 text-sm text-slate-300">
             {ALL_QUESTIONS.length} questions loaded from the local database.
           </p>
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             {['All', ...CATEGORIES].map((item) => (
               <button
                 key={item}
                 type="button"
                 onClick={() => setCategory(item)}
-                className={`pixel-text px-3 py-2 text-[9px] ${
-                  category === item ? 'bg-sonar text-ink' : 'bg-white/10 text-slate-200 hover:bg-white/20'
+                className={`pixel-text min-h-[44px] touch-manipulation px-3 py-2 text-[9px] ${
+                  category === item ? 'bg-sonar text-ink' : 'bg-white/10 text-slate-200 hover:bg-white/20 active:bg-white/25'
                 }`}
               >
                 {item}

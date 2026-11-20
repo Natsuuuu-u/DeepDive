@@ -20,23 +20,22 @@ export default function Navigation() {
   return (
     <nav
       aria-label="Main"
-      className="sticky top-0 z-20 border-b-4 border-[#0b2a3d] bg-ink/90 backdrop-blur"
+      className="pt-safe sticky top-0 z-30 border-b-4 border-[#0b2a3d] bg-ink/95 backdrop-blur"
     >
-      <ul className="mx-auto flex max-w-5xl items-center gap-1 overflow-x-auto px-2 py-2">
+      <ul className="mx-auto grid max-w-5xl grid-cols-6 gap-0.5 px-1.5 py-1.5 sm:flex sm:items-center sm:gap-1 sm:px-2 sm:py-2">
         {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-          <li key={to}>
+          <li key={to} className="min-w-0">
             <NavLink
               to={to}
               end={to === '/'}
               className={({ isActive }) =>
-                `pixel-text flex items-center gap-2 whitespace-nowrap px-3 py-2 text-[9px] transition-colors ${
+                `pixel-text flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 px-1 py-1 text-[9px] transition-colors active:brightness-95 sm:min-h-11 sm:flex-row sm:gap-2 sm:px-3 sm:text-[10px] ${
                   isActive ? 'bg-sonar text-ink shadow-pixel-sm' : 'text-slate-200 hover:bg-white/10'
                 }`
               }
             >
-              <Icon size={14} aria-hidden />
-              <span className="hidden sm:inline">{label}</span>
-              <span className="sr-only sm:hidden">{label}</span>
+              <Icon className="h-[18px] w-[18px] shrink-0 sm:h-3.5 sm:w-3.5" aria-hidden />
+              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">{label}</span>
             </NavLink>
           </li>
         ))}

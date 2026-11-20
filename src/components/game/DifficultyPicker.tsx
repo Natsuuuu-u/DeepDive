@@ -21,7 +21,7 @@ export default function DifficultyPicker({ value, onChange, disabled = false }: 
             aria-checked={selected}
             disabled={disabled}
             onClick={() => onChange(difficulty.id)}
-            className={`pixel-border flex min-h-[104px] flex-col gap-1 p-3 text-left transition-colors ${
+            className={`pixel-border flex min-h-[96px] touch-manipulation flex-col gap-1 p-3 text-left transition-[background-color,border-color,filter] active:brightness-95 ${
               selected ? difficulty.selected : 'border-white/20 bg-ink/60 hover:border-sonar/60'
             }`}
           >
@@ -29,7 +29,7 @@ export default function DifficultyPicker({ value, onChange, disabled = false }: 
               <span className={`pixel-text text-[10px] ${difficulty.color}`}>{difficulty.label}</span>
               {selected && <Check size={16} className={difficulty.color} aria-hidden />}
             </span>
-            <span className="pixel-text text-[7px] text-slate-400">{difficulty.tagline}</span>
+            <span className="pixel-text mt-0.5 text-[8px] text-slate-400">{difficulty.tagline}</span>
             <span className="mt-1 text-xs leading-snug text-slate-300">{difficulty.description}</span>
           </button>
         )

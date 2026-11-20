@@ -16,15 +16,17 @@ export default function QuestionCard({ question, index, total }: Props) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
-      <PixelPanel>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[10px]">
-          <div className="flex flex-wrap items-center gap-3">
+      <PixelPanel className="p-3 sm:p-4">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] sm:mb-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="pixel-text text-gold">{question.category}</span>
             <span className="pixel-text text-slate-400">{question.difficulty}</span>
           </div>
-          <span className="pixel-text text-slate-300">{index + 1}/{total}</span>
+          <span className="pixel-text text-slate-300" aria-label={`Question ${index + 1} of ${total}`}>
+            {index + 1}/{total}
+          </span>
         </div>
-        <p className="text-lg font-semibold leading-snug sm:text-xl">{question.prompt}</p>
+        <p className="text-[17px] font-semibold leading-snug sm:text-xl">{question.prompt}</p>
       </PixelPanel>
     </motion.div>
   )

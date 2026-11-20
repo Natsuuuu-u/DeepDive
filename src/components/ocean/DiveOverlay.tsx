@@ -16,6 +16,10 @@ import type { DepthZone, RarityTierId } from '@/types'
 /** Width reserved on the right for the depth gauge column (matches GameStage). */
 const GAUGE_PX = 104
 
+/** The gauge column only exists from md upwards; phones use the full stage width. */
+const gaugeVisible = () =>
+  typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
+
 const TIER_HEX: Record<RarityTierId, string> = {
   plankton: '#cbd5e1',
   'too-clever': '#7dd3fc',
@@ -86,7 +90,7 @@ export default function DiveOverlay({ spec, motion: ocean, answerText, typedText
     let prevPhase: DivePhase | null = null
     let prevZone: DepthZone['id'] | null = null
 
-    const centreX = () => (width - GAUGE_PX) / 2
+    const centreX = () => (width - (gaugeVisible() ? GAUGE_PX : 0)) / 2
     const helmetY = (frameY: number) => frameY + 14
 
     const onEnter = (next: DivePhase, y: number) => {
@@ -271,7 +275,7 @@ export default function DiveOverlay({ spec, motion: ocean, answerText, typedText
 
         {special && !reduce && (
           <motion.div
-            className="absolute left-0 top-[34%] h-[170%] w-[calc(100%-6.5rem)]"
+            className="absolute left-0 top-[34%] h-[170%] w-full md:w-[calc(100%-6.5rem)]"
             style={{
               translateY: '-50%',
               background:
@@ -328,8 +332,8 @@ export default function DiveOverlay({ spec, motion: ocean, answerText, typedText
         )}
       </div>
 
-      {/* Content column (leaves room for the depth gauge). */}
-      <div aria-hidden className="absolute inset-y-0 left-0 right-[6.5rem]">
+      {/* Content column (leaves room for the depth gauge on wider screens). */}
+      <div aria-hidden className="absolute inset-y-0 left-0 right-0 md:right-[6.5rem]">
         {/* Diver */}
         <div ref={diverRef} className="absolute left-1/2 top-0" style={{ willChange: 'transform' }}>
           <div className="origin-top scale-[0.8] sm:scale-100">
@@ -452,7 +456,7 @@ export default function DiveOverlay({ spec, motion: ocean, answerText, typedText
       <button
         type="button"
         onClick={skip}
-        className="pixel-text pointer-events-auto absolute bottom-2 right-[7rem] bg-black/60 px-2 py-1 text-[8px] text-slate-200 hover:text-sonar focus-visible:text-sonar"
+        className="pixel-text pointer-events-auto absolute bottom-2 left-1/2 inline-flex min-h-[44px] -translate-x-1/2 items-center bg-black/60 px-3 py-2 text-[9px] text-slate-200 hover:text-sonar focus-visible:text-sonar md:left-auto md:right-[7rem] md:translate-x-0"
         aria-label="Skip dive animation"
       >
         <span className="inline-flex items-center gap-1">
@@ -466,7 +470,7 @@ export default function DiveOverlay({ spec, motion: ocean, answerText, typedText
 function Ring({ color }: { color: string }) {
   return (
     <motion.div
-      className="absolute left-[calc((100%-6.5rem)/2)] top-[34%] h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-4"
+      className="absolute left-1/2 top-[34%] h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 md:left-[calc((100%-6.5rem)/2)]"
       style={{ borderColor: color }}
       initial={{ scale: 0.2, opacity: 0.9 }}
       animate={{ scale: 6, opacity: 0 }}

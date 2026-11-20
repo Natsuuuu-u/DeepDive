@@ -42,21 +42,26 @@ interface Props {
   depth: MotionValue<number>
   /** False while reduced motion is requested or the tab is hidden. */
   animate: boolean
+  /** Fewer glows and drifting particles on phones. */
+  compact?: boolean
 }
 
 /**
  * Loose marine life that swims across the page behind the cards. All motion is
  * CSS-driven so it stays cheap; it is simply not rendered when animations are off.
  */
-export default function AmbientLife({ depth, animate }: Props) {
+export default function AmbientLife({ depth, animate, compact = false }: Props) {
   const glowColor = useTransform(depth, (metres) => ZONE_GLOW[getZoneIdAtDepth(metres)])
   const glowOpacity = useTransform(depth, (metres) =>
     Math.min(0.5, Math.max(0, (metres - 350) / 2600)),
   )
+  const schools = compact ? SCHOOLS.slice(0, 2) : SCHOOLS
+  const snow = compact ? SNOW.slice(0, 8) : SNOW
+  const glows = compact ? GLOWS.slice(0, 2) : GLOWS
 
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      {GLOWS.map((glow, index) => (
+      {glows.map((glow, index) => (
         <motion.span
           key={index}
           className="absolute rounded-full blur-2xl"
@@ -72,7 +77,7 @@ export default function AmbientLife({ depth, animate }: Props) {
       ))}
 
       {animate &&
-        SCHOOLS.map((school) => (
+        schools.map((school) => (
           <div
             key={school.id}
             className="dd-swim absolute flex"
@@ -103,7 +108,7 @@ export default function AmbientLife({ depth, animate }: Props) {
         ))}
 
       {animate &&
-        SNOW.map((flake, index) => (
+        snow.map((flake, index) => (
           <span
             key={index}
             className="dd-snow absolute top-0 block rounded-full bg-white/40"

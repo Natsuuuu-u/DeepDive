@@ -40,13 +40,13 @@ export default function DifficultyLobby({ mode, title, blurb, note, onStart }: P
 
   return (
     <div className="space-y-4">
-      <header className="mx-auto max-w-xl rounded border border-white/10 bg-ink/55 px-4 py-3 text-center backdrop-blur-sm">
-        <h1 className="pixel-text text-lg text-white sm:text-xl">{title}</h1>
+      <header className="mx-auto max-w-xl rounded border border-white/10 bg-ink/55 px-3 py-3 text-center backdrop-blur-sm sm:px-4">
+        <h1 className="pixel-text text-base leading-relaxed text-white sm:text-xl">{title}</h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-slate-200">{blurb}</p>
         <p className="mt-1 text-xs text-slate-300">{note}</p>
       </header>
 
-      <PixelPanel className="space-y-4">
+      <PixelPanel className="space-y-4 p-3 sm:p-4">
         <div>
           <h2 className="pixel-text text-[10px] text-gold">1 · Choose your descent</h2>
           <p className="mt-2 text-xs text-slate-300">
@@ -59,7 +59,7 @@ export default function DifficultyLobby({ mode, title, blurb, note, onStart }: P
         </p>
       </PixelPanel>
 
-      <PixelPanel className="space-y-4">
+      <PixelPanel className="space-y-4 p-3 sm:p-4">
         <div>
           <h2 className="pixel-text text-[10px] text-gold">2 · Choose your waters</h2>
           <p className="mt-2 text-xs text-slate-300">
@@ -78,7 +78,11 @@ export default function DifficultyLobby({ mode, title, blurb, note, onStart }: P
           Selected: <span className="text-slate-200">{getCategoryLabel(effectiveCategory)}</span> ·{' '}
           {getDifficultyQuestionPoolSize(difficulty, effectiveCategory)} questions available.
         </p>
-        <PixelButton onClick={start} icon={<Anchor size={14} />} className="w-full sm:w-auto">
+        <PixelButton
+          onClick={start}
+          icon={<Anchor size={14} />}
+          className="min-h-[48px] w-full sm:w-auto"
+        >
           {mode === 'daily' ? 'Begin today’s dive' : 'Begin the dive'}
           <ChevronRight size={14} />
         </PixelButton>

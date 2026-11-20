@@ -80,9 +80,20 @@ function buildItems(layer: LayerConfig, zone: ZoneId, zoneIndex: number): Item[]
   })
 }
 
-const LAYER_ITEMS = LAYERS.map((layer) =>
-  DEPTH_ZONES.map((zone, zoneIndex) => buildItems(layer, zone.id, zoneIndex)),
-)
+function buildLayerItems(compact: boolean): Item[][][] {
+  return LAYERS.map((layer) =>
+    DEPTH_ZONES.map((zone, zoneIndex) =>
+      buildItems(
+        compact ? { ...layer, perZone: Math.max(2, layer.perZone - 2) } : layer,
+        zone.id,
+        zoneIndex,
+      ),
+    ),
+  )
+}
+
+const FULL_LAYER_ITEMS = buildLayerItems(false)
+const COMPACT_LAYER_ITEMS = buildLayerItems(true)
 
 function ZoneGroup({
   items,
@@ -119,13 +130,13 @@ function ZoneGroup({
 
 function Layer({
   layer,
-  index,
+  items,
   depth,
   weights,
   animate,
 }: {
   layer: LayerConfig
-  index: number
+  items: Item[][]
   depth: MotionValue<number>
   weights: MotionValue<number>[]
   animate: boolean
@@ -139,7 +150,7 @@ function Layer({
       {DEPTH_ZONES.map((zone, zi) => (
         <ZoneGroup
           key={zone.id}
-          items={LAYER_ITEMS[index][zi]}
+          items={items[zi]}
           px={layer.px}
           weight={weights[zi]}
           animate={animate}
@@ -152,6 +163,8 @@ function Layer({
 interface Props {
   depth: MotionValue<number>
   animate: boolean
+  /** Fewer scenery sprites on phones. */
+  compact?: boolean
 }
 
 /**
@@ -159,7 +172,7 @@ interface Props {
  * and rocks cross-fade using the same smooth zone weights as the water colour,
  * so nothing pops in or out when a depth threshold is crossed.
  */
-export default function OceanLayers({ depth, animate }: Props) {
+export default function OceanLayers({ depth, animate, compact = false }: Props) {
   const all = useTransform(depth, (d) => getZoneWeights(d))
   const w0 = useTransform(all, (w) => w[0])
   const w1 = useTransform(all, (w) => w[1])
@@ -167,11 +180,19 @@ export default function OceanLayers({ depth, animate }: Props) {
   const w3 = useTransform(all, (w) => w[3])
   const w4 = useTransform(all, (w) => w[4])
   const weights = useMemo(() => [w0, w1, w2, w3, w4], [w0, w1, w2, w3, w4])
+  const itemSets = compact ? COMPACT_LAYER_ITEMS : FULL_LAYER_ITEMS
 
   return (
     <>
       {LAYERS.map((layer, i) => (
-        <Layer key={layer.id} layer={layer} index={i} depth={depth} weights={weights} animate={animate} />
+        <Layer
+          key={layer.id}
+          layer={layer}
+          items={itemSets[i]}
+          depth={depth}
+          weights={weights}
+          animate={animate}
+        />
       ))}
     </>
   )

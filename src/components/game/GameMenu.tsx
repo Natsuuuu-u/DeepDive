@@ -64,9 +64,9 @@ export default function GameMenu({ onRestart, onExit }: Props) {
         aria-label="Game menu"
         title="Game menu"
         onClick={() => setOpen((value) => !value)}
-        className="flex h-10 w-10 items-center justify-center border-2 border-[#0b2a3d] bg-ink/70 text-slate-200 shadow-pixel-sm transition-colors hover:text-sonar"
+        className="flex h-11 w-11 items-center justify-center border-2 border-[#0b2a3d] bg-ink/70 text-slate-200 shadow-pixel-sm transition-colors hover:text-sonar active:bg-white/10"
       >
-        <EllipsisVertical size={16} aria-hidden />
+        <EllipsisVertical size={18} aria-hidden />
       </button>
 
       <AnimatePresence>
@@ -75,7 +75,7 @@ export default function GameMenu({ onRestart, onExit }: Props) {
             key="game-menu"
             role="menu"
             aria-label="Game options"
-            className="absolute right-0 top-full z-40 mt-2 w-44 border-2 border-[#0b2a3d] bg-ink/95 p-1 shadow-pixel backdrop-blur-sm"
+            className="absolute right-0 top-full z-40 mt-2 w-48 border-2 border-[#0b2a3d] bg-ink/95 p-1 shadow-pixel backdrop-blur-sm"
             initial={{ opacity: 0, y: -6, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
@@ -87,7 +87,7 @@ export default function GameMenu({ onRestart, onExit }: Props) {
               type="button"
               role="menuitem"
               onClick={() => choose('restart')}
-              className="pixel-text flex min-h-[40px] w-full items-center gap-2 px-2 py-2.5 text-left text-[8px] text-slate-200 transition-colors hover:bg-white/10 hover:text-sonar focus-visible:bg-white/10 focus-visible:text-sonar"
+              className="pixel-text flex min-h-[44px] w-full touch-manipulation items-center gap-2 px-3 py-2.5 text-left text-[9px] text-slate-200 transition-colors hover:bg-white/10 hover:text-sonar focus-visible:bg-white/10 focus-visible:text-sonar active:bg-white/15"
             >
               <RotateCcw size={13} aria-hidden />
               Restart Game
@@ -97,7 +97,7 @@ export default function GameMenu({ onRestart, onExit }: Props) {
               type="button"
               role="menuitem"
               onClick={() => choose('exit')}
-              className="pixel-text flex min-h-[40px] w-full items-center gap-2 px-2 py-2.5 text-left text-[8px] text-coral transition-colors hover:bg-coral/15 focus-visible:bg-coral/15"
+              className="pixel-text flex min-h-[44px] w-full touch-manipulation items-center gap-2 px-3 py-2.5 text-left text-[9px] text-coral transition-colors hover:bg-coral/15 focus-visible:bg-coral/15 active:bg-coral/20"
             >
               <LogOut size={13} aria-hidden />
               Exit Game

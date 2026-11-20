@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AlertCircle, Check, Layers, SpellCheck, Waves, X } from 'lucide-react'
 import GameHeader from './GameHeader'
@@ -75,6 +75,25 @@ export default function GamePreview({
     exitGame,
   } = useTriviaGame(mode, options)
   const reduceMotion = useReducedMotionPreference()
+  const [prefill, setPrefill] = useState<{ text: string; nonce: number } | null>(null)
+  useEffect(() => {
+    setPrefill(null)
+  }, [question?.id, game.runId])
+  const suggestionRef = useRef<HTMLDivElement>(null)
+  const suggestionActionsRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!suggestion) return
+    const reveal = () => {
+      suggestionActionsRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }
+    // The keyboard can open after the panel does, shrinking the viewport.
+    const timers = [window.setTimeout(reveal, 80), window.setTimeout(reveal, 420)]
+    window.addEventListener('resize', reveal)
+    return () => {
+      timers.forEach((id) => window.clearTimeout(id))
+      window.removeEventListener('resize', reveal)
+    }
+  }, [suggestion])
   const difficultyInfo = getDifficulty(activeDifficulty)
   const activeCategory = game.category ?? ALL_CATEGORIES_ID
   const categoryLabel = getCategoryLabel(activeCategory)
@@ -181,17 +200,17 @@ export default function GamePreview({
           motion={ocean}
           menu={<GameMenu onRestart={restart} onExit={exitToSelection} />}
         />
-        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-slate-300">
+        <div className="mb-3 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-300 sm:mb-4 sm:gap-2 sm:text-sm [@media(max-height:520px)]:hidden">
           <span
-            className={`pixel-text border border-white/20 bg-black/30 px-2 py-1 text-[8px] ${difficultyInfo.color}`}
+            className={`pixel-text border border-white/20 bg-black/30 px-2 py-1 text-[9px] ${difficultyInfo.color}`}
           >
             {difficultyInfo.label}
           </span>
-          <span className="pixel-text flex items-center gap-1 border border-white/20 bg-black/30 px-2 py-1 text-[8px] text-sonar">
-            <Layers size={10} aria-hidden />
+          <span className="pixel-text flex items-center gap-1 border border-white/20 bg-black/30 px-2 py-1 text-[9px] text-sonar">
+            <Layers size={11} aria-hidden />
             {categoryLabel}
           </span>
-          <span>{blurb}</span>
+          <span className="hidden md:inline">{blurb}</span>
         </div>
         {persistenceError && (
           <PixelPanel role="alert" className="mb-4 text-sm text-coral">
@@ -227,7 +246,9 @@ export default function GamePreview({
                 onSubmit={submitAnswer}
                 disabled={game.phase !== 'playing' || introOpen}
                 autoFocus={!introOpen}
-                placeholder="Type your answer..."
+                resetKey={question.id}
+                prefill={prefill}
+                placeholder="Type answer..."
               />
 
             {game.message && game.phase === 'playing' && (
@@ -238,27 +259,44 @@ export default function GamePreview({
             )}
 
             {suggestion && game.phase === 'playing' && (
-              <PixelPanel role="group" aria-label="Spelling suggestion" className="space-y-3 text-sm">
-                <p className="flex items-start gap-2 text-sky-300">
-                  <SpellCheck className="mt-0.5 shrink-0" size={18} aria-hidden />
-                  <span>
-                    {suggestion.ambiguous ? 'Not sure what you meant. ' : 'Close! '}
-                    Did you mean{' '}
-                    <strong className="text-white">“{suggestion.answer.text}”</strong>?
-                  </span>
-                </p>
-                <p className="text-xs text-slate-300">
-                  You typed “{suggestion.typed}”. No points are awarded unless you confirm.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <PixelButton onClick={confirmSuggestion} icon={<Check size={14} />}>
-                    Yes, that&apos;s it
-                  </PixelButton>
-                  <PixelButton variant="secondary" onClick={dismissSuggestion} icon={<X size={14} />}>
-                    No
-                  </PixelButton>
-                </div>
-              </PixelPanel>
+              <div ref={suggestionRef}>
+                <PixelPanel role="group" aria-label="Spelling suggestion" className="space-y-3 text-sm">
+                  <p className="flex items-start gap-2 text-sky-300">
+                    <SpellCheck className="mt-0.5 shrink-0" size={18} aria-hidden />
+                    <span>
+                      {suggestion.ambiguous ? 'Not sure what you meant. ' : 'Close! '}
+                      Did you mean{' '}
+                      <strong className="text-white">“{suggestion.answer.text}”</strong>?
+                    </span>
+                  </p>
+                  <p className="text-xs text-slate-300">
+                    You typed “{suggestion.typed}”. No points are awarded unless you confirm.
+                  </p>
+                  <div
+                    ref={suggestionActionsRef}
+                    className="flex scroll-mb-16 flex-col gap-2 sm:flex-row sm:flex-wrap"
+                  >
+                    <PixelButton
+                      onClick={confirmSuggestion}
+                      icon={<Check size={14} />}
+                      className="w-full px-2 sm:w-auto"
+                    >
+                      Yes, that&apos;s it
+                    </PixelButton>
+                    <PixelButton
+                      variant="secondary"
+                      onClick={() => {
+                        setPrefill({ text: suggestion.typed, nonce: Date.now() })
+                        dismissSuggestion()
+                      }}
+                      icon={<X size={14} />}
+                      className="w-full px-2 sm:w-auto"
+                    >
+                      No
+                    </PixelButton>
+                  </div>
+                </PixelPanel>
+              </div>
             )}
 
             {game.phase === 'feedback' && questionResult?.matched && (

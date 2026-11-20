@@ -5,6 +5,7 @@ import AmbientLife from './AmbientLife'
 import { useOceanMotion, type OceanMotion } from '@/hooks/useOceanMotion'
 import { useReducedMotionPreference } from '@/hooks/useReducedMotionPreference'
 import { usePageVisible } from '@/hooks/usePageVisible'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { getDarkness, getOceanGradient, getRayStrength } from '@/lib/ocean'
 
 // Fixed positions so bubbles don't jump around on re-render.
@@ -22,6 +23,8 @@ interface Props {
   fixed?: boolean
   /** Shared, frame-rate depth + camera values (driven by the dive animation). */
   motion?: OceanMotion
+  /** Set false to skip the parallax scenery (keeps water, rays, fish and bubbles). */
+  scene?: boolean
 }
 
 /**
@@ -29,9 +32,10 @@ interface Props {
  * functions of a continuous depth in metres, so crossing a zone boundary is a
  * gradual blend, never a swap.
  */
-export default function OceanBackground({ score = 0, fixed = true, motion: shared }: Props) {
+export default function OceanBackground({ score = 0, fixed = true, motion: shared, scene = true }: Props) {
   const reduceMotion = useReducedMotionPreference()
   const pageVisible = usePageVisible()
+  const compact = useMediaQuery('(max-width: 639px)')
   const own = useOceanMotion(score * 10)
   const m = shared ?? own
 
@@ -72,12 +76,15 @@ export default function OceanBackground({ score = 0, fixed = true, motion: share
           }}
         />
 
-        {layers && <OceanLayers depth={m.depth} animate={!reduceMotion && pageVisible} />}
+        {layers && scene && (
+          <OceanLayers depth={m.depth} animate={!reduceMotion && pageVisible} compact={compact} />
+        )}
 
-        <AmbientLife depth={m.depth} animate={!reduceMotion && pageVisible} />
+        <AmbientLife depth={m.depth} animate={!reduceMotion && pageVisible} compact={compact} />
 
-        {!reduceMotion &&
-          BUBBLES.map((b, i) => (
+        {pageVisible &&
+          !reduceMotion &&
+          (compact ? BUBBLES.slice(0, 9) : BUBBLES).map((b, i) => (
             <motion.span
               key={i}
               className="absolute bottom-0 block border-2 border-white/40 bg-white/10"

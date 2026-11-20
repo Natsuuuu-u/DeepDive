@@ -37,9 +37,9 @@ export default function StatisticsPage() {
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {generalTiles.map((item) => (
-            <PixelPanel key={item.label}>
-              <p className="pixel-text text-[8px] text-slate-400">{item.label}</p>
-              <p className="pixel-text mt-3 text-[10px] text-gold">{item.value}</p>
+            <PixelPanel key={item.label} className="p-3 sm:p-4">
+              <p className="pixel-text text-[9px] leading-relaxed text-slate-400">{item.label}</p>
+              <p className="pixel-text mt-3 break-words text-[10px] leading-relaxed text-gold">{item.value}</p>
             </PixelPanel>
           ))}
         </div>
@@ -56,17 +56,17 @@ export default function StatisticsPage() {
               <h3 className="pixel-text text-[9px]">Dive consistency</h3>
             </div>
             <dl className="space-y-3 text-sm text-slate-300">
-              <div className="flex justify-between gap-3">
+              <div className="flex flex-wrap justify-between gap-x-3 gap-y-1">
                 <dt>Average correct answers</dt>
                 <dd className="text-white">{formatAverage(stats.averageCorrectAnswers)} / 7</dd>
               </div>
-              <div className="flex justify-between gap-3">
+              <div className="flex flex-wrap justify-between gap-x-3 gap-y-1">
                 <dt>Best rarity achieved</dt>
                 <dd className="text-white">
                   {stats.bestRarity ? getTier(stats.bestRarity).label : '—'}
                 </dd>
               </div>
-              <div className="flex justify-between gap-3">
+              <div className="flex flex-wrap justify-between gap-x-3 gap-y-1">
                 <dt>Average score · last 10 games</dt>
                 <dd className="text-white">{formatAverage(stats.recentAverageScore)}</dd>
               </div>
@@ -119,15 +119,15 @@ export default function StatisticsPage() {
               <h3 className="pixel-text text-[9px]">Daily streaks</h3>
             </div>
             <dl className="space-y-3 text-sm text-slate-300">
-              <div className="flex justify-between gap-3">
+              <div className="flex flex-wrap justify-between gap-x-3 gap-y-1">
                 <dt>Current streak</dt>
                 <dd className="text-white">{stats.currentDailyStreak} days</dd>
               </div>
-              <div className="flex justify-between gap-3">
+              <div className="flex flex-wrap justify-between gap-x-3 gap-y-1">
                 <dt>Longest streak</dt>
                 <dd className="text-white">{stats.longestDailyStreak} days</dd>
               </div>
-              <div className="flex justify-between gap-3">
+              <div className="flex flex-wrap justify-between gap-x-3 gap-y-1">
                 <dt>Official Daily Dives</dt>
                 <dd className="text-white">{stats.totalDailyDives}</dd>
               </div>

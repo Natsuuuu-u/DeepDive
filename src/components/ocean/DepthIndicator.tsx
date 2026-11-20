@@ -33,7 +33,7 @@ export default function DepthIndicator({ score, variant = 'vertical', className 
     return (
       <div data-testid="depth-compact" className={`pixel-text text-[10px] text-sonar ${className}`}>
         <MotionText value={depth} format={formatMeters} />{' '}
-        <span className="text-slate-300">
+        <span className="max-[359px]:hidden text-slate-300">
           · <MotionText value={depth} format={formatZone} />
         </span>
       </div>

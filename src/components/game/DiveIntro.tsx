@@ -40,7 +40,7 @@ export default function DiveIntro({ mode, difficulty, categoryLabel, onSkip }: P
       role="dialog"
       aria-modal="true"
       aria-label={`${copy.kicker}, ${info.label} difficulty, ${categoryLabel}. Diving in.`}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-ink px-4"
+      className="pt-safe fixed inset-0 z-50 flex flex-col overflow-hidden bg-ink"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -86,69 +86,73 @@ export default function DiveIntro({ mode, difficulty, categoryLabel, onSkip }: P
           />
         ))}
 
-      {/* The whole scene drifts down, as if the camera is following the diver. */}
-      <motion.div
-        className="relative z-10 flex w-full max-w-md flex-col items-center text-center"
-        initial={reduceMotion ? false : { y: -18, scale: 1 }}
-        animate={reduceMotion ? undefined : { y: 14, scale: 1.03 }}
-        transition={{ duration: durationMs / 1000, ease: 'easeInOut' }}
-      >
+      {/* Scrollable scene keeps the skip control reachable on short/landscape screens. */}
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-4 py-6">
+        {/* The whole scene drifts down, as if the camera is following the diver. */}
         <motion.div
-          className="mb-6"
-          initial={reduceMotion ? false : { y: -60, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: reduceMotion ? 0 : 1.2, ease: 'easeOut' }}
+          className="m-auto flex w-full max-w-md flex-col items-center text-center"
+          initial={reduceMotion ? false : { y: -18, scale: 1 }}
+          animate={reduceMotion ? undefined : { y: 14, scale: 1.03 }}
+          transition={{ duration: durationMs / 1000, ease: 'easeInOut' }}
         >
-          <DivingCharacter pixel={7} />
+          <motion.div
+            className="mb-4 sm:mb-6"
+            initial={reduceMotion ? false : { y: -60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: reduceMotion ? 0 : 1.2, ease: 'easeOut' }}
+          >
+            <DivingCharacter pixel={7} />
+          </motion.div>
+
+          <motion.p
+            className="pixel-text text-[10px] text-sonar"
+            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: reduceMotion ? 0 : 0.35, duration: 0.4 }}
+          >
+            {copy.kicker}
+          </motion.p>
+
+          <motion.h1
+            className={`pixel-text mt-3 text-lg leading-relaxed sm:mt-4 sm:text-2xl ${info.color}`}
+            initial={reduceMotion ? false : { opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: reduceMotion ? 0 : 0.55, type: 'spring', stiffness: 160, damping: 14 }}
+          >
+            {info.label} dive
+          </motion.h1>
+
+          <motion.p
+            className="pixel-text mt-3 max-w-[22rem] text-[9px] leading-relaxed text-slate-300"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: reduceMotion ? 0 : 0.9, duration: 0.4 }}
+          >
+            {categoryLabel} · {copy.subtitle}
+          </motion.p>
+
+          <motion.div
+            className="mt-5 flex flex-col items-center gap-2 text-slate-300 sm:mt-8"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: reduceMotion ? 0 : 1.4, duration: 0.4 }}
+          >
+            <span className="pixel-text text-[8px] text-gold">Preparing the descent</span>
+            {!reduceMotion && (
+              <motion.span
+                className="[@media(max-height:520px)]:hidden"
+                animate={{ y: [0, 5, 0] }}
+                transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <ChevronDown size={16} aria-hidden />
+              </motion.span>
+            )}
+          </motion.div>
         </motion.div>
+      </div>
 
-        <motion.p
-          className="pixel-text text-[10px] text-sonar"
-          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: reduceMotion ? 0 : 0.35, duration: 0.4 }}
-        >
-          {copy.kicker}
-        </motion.p>
-
-        <motion.h1
-          className={`pixel-text mt-4 text-xl sm:text-2xl ${info.color}`}
-          initial={reduceMotion ? false : { opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: reduceMotion ? 0 : 0.55, type: 'spring', stiffness: 160, damping: 14 }}
-        >
-          {info.label} dive
-        </motion.h1>
-
-        <motion.p
-          className="pixel-text mt-3 text-[8px] text-slate-300"
-          initial={reduceMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: reduceMotion ? 0 : 0.9, duration: 0.4 }}
-        >
-          {categoryLabel} · {copy.subtitle}
-        </motion.p>
-
-        <motion.div
-          className="mt-8 flex flex-col items-center gap-2 text-slate-300"
-          initial={reduceMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: reduceMotion ? 0 : 1.4, duration: 0.4 }}
-        >
-          <span className="pixel-text text-[8px] text-gold">Preparing the descent</span>
-          {!reduceMotion && (
-            <motion.span
-              animate={{ y: [0, 5, 0] }}
-              transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <ChevronDown size={16} aria-hidden />
-            </motion.span>
-          )}
-        </motion.div>
-      </motion.div>
-
-      <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-3 pb-6">
-        <div className="h-1 w-40 overflow-hidden bg-white/10" aria-hidden>
+      <div className="relative z-10 flex shrink-0 flex-col items-center gap-2.5 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-2">
+        <div className="h-1 w-44 overflow-hidden bg-white/10 sm:w-56" aria-hidden>
           <motion.div
             className="h-full bg-sonar"
             initial={{ width: '0%' }}
@@ -156,7 +160,7 @@ export default function DiveIntro({ mode, difficulty, categoryLabel, onSkip }: P
             transition={{ duration: durationMs / 1000, ease: 'linear' }}
           />
         </div>
-        <PixelButton variant="secondary" onClick={onSkip}>
+        <PixelButton variant="secondary" onClick={onSkip} className="min-h-[48px] px-6">
           Skip intro
         </PixelButton>
       </div>

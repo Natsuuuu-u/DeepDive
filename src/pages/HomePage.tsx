@@ -79,10 +79,12 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="space-y-8">
-      <section className="flex flex-col items-center gap-4 pt-6 text-center">
-        <DivingCharacter pixel={8} />
-        <h1 className="pixel-text text-xl leading-relaxed text-white sm:text-2xl">Deep Dive Trivia</h1>
+    <div className="space-y-6 sm:space-y-8">
+      <section className="flex flex-col items-center gap-3 pt-2 text-center sm:gap-4 sm:pt-6">
+        <div className="scale-90 sm:scale-100">
+          <DivingCharacter pixel={8} />
+        </div>
+        <h1 className="pixel-text text-lg leading-relaxed text-white sm:text-2xl">Deep Dive Trivia</h1>
         <p className="max-w-md text-sm text-slate-200">
           The rarer your answer, the deeper you sink. Common answers keep you in the shallows.
         </p>
@@ -93,7 +95,7 @@ export default function HomePage() {
           <PixelPanel className="h-full transition-transform group-hover:-translate-y-1 group-hover:border-sonar">
             <div className="mb-3 flex items-center justify-between">
               <CalendarDays className="text-sonar" size={22} aria-hidden />
-              <span className="pixel-text text-[9px] text-kelp">{status}</span>
+              <span className="pixel-text text-[9px] leading-relaxed text-kelp">{status}</span>
             </div>
             <h2 className="pixel-text text-xs text-gold">Daily Dive</h2>
             <p className="mt-2 text-sm text-slate-300">7 questions · 25 seconds each · one scored dive per day.</p>
@@ -142,11 +144,11 @@ export default function HomePage() {
             { label: 'Daily streak', value: `${currentStreak} days`, icon: CalendarDays },
             { label: 'Deepest dive', value: `${progression.deepestDiveMeters.toLocaleString()}m`, icon: InfinityIcon },
           ].map(({ label, value, icon: Icon }) => (
-            <PixelPanel key={label} className="flex items-center gap-3">
+            <PixelPanel key={label} className="flex items-center gap-2.5 p-3 sm:gap-3 sm:p-4">
               <Icon className="shrink-0 text-sonar" size={18} aria-hidden />
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs text-slate-300">{label}</p>
-                <p className="pixel-text mt-2 text-[9px] text-gold">{value}</p>
+                <p className="pixel-text mt-2 break-words text-[10px] leading-relaxed text-gold">{value}</p>
               </div>
             </PixelPanel>
           ))}

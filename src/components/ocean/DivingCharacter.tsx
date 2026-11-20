@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useSettings } from '@/context/SettingsContext'
+import { useReducedMotionPreference } from '@/hooks/useReducedMotionPreference'
 
 /**
  * Pixel sprite defined as text rows. Each character maps to a colour.
@@ -42,10 +42,10 @@ interface Props {
 }
 
 export default function DivingCharacter({ pixel = 6, bob = true, className = '' }: Props) {
-  const { settings } = useSettings()
+  const reduceMotion = useReducedMotionPreference()
   const rows = SPRITE.length
   const cols = SPRITE[0].length
-  const animate = bob && !settings.reduceMotion
+  const animate = bob && !reduceMotion
 
   return (
     <motion.svg

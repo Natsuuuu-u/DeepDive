@@ -71,7 +71,7 @@ export default function ConfirmDialog({
       {open && (
         <motion.div
           key="confirm"
-          className="fixed inset-0 z-[70] flex items-end justify-center p-3 sm:items-center sm:p-4"
+          className="fixed inset-0 z-[70] flex items-end justify-center px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:items-center sm:p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -95,7 +95,7 @@ export default function ConfirmDialog({
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 320, damping: 26 }}
           >
-            <PixelPanel className="space-y-4 bg-[#04182a]/95">
+            <PixelPanel className="max-h-[calc(100dvh-1.5rem)] space-y-4 overflow-y-auto bg-[#04182a]/95">
               <div className="flex items-start gap-3">
                 {icon && (
                   <span className="mt-0.5 shrink-0 text-coral" aria-hidden>
@@ -114,14 +114,14 @@ export default function ConfirmDialog({
                   ref={cancelRef}
                   variant="secondary"
                   onClick={onCancel}
-                  className="min-h-[44px] w-full sm:w-auto"
+                  className="min-h-[48px] w-full sm:w-auto"
                 >
                   {cancelLabel}
                 </PixelButton>
                 <PixelButton
                   variant={tone === 'danger' ? 'danger' : 'primary'}
                   onClick={onConfirm}
-                  className="min-h-[44px] w-full sm:w-auto"
+                  className="min-h-[48px] w-full sm:w-auto"
                 >
                   {confirmLabel}
                 </PixelButton>

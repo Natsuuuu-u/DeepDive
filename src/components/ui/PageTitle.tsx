@@ -8,8 +8,8 @@ interface Props {
 
 export default function PageTitle({ title, subtitle, icon }: Props) {
   return (
-    <header className="mb-6">
-      <h1 className="pixel-text flex items-center gap-3 text-lg text-sonar sm:text-xl">
+    <header className="mb-4 sm:mb-6">
+      <h1 className="pixel-text flex items-center gap-2.5 text-base leading-relaxed text-sonar sm:gap-3 sm:text-xl">
         {icon}
         {title}
       </h1>

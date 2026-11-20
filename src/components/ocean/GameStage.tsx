@@ -22,6 +22,8 @@ interface Props {
   onSkipDive?: () => void
   /** Changes when a miss is shown; renders a soft coral ripple behind the cards. */
   missKey?: number
+  /** Set false for summary screens where scenery would overlap the text. */
+  scene?: boolean
 }
 
 /** Framed play area: the ocean follows the live depth, the diver sinks as it grows. */
@@ -35,6 +37,7 @@ export default function GameStage({
   diveTypedText,
   onSkipDive,
   missKey,
+  scene = true,
 }: Props) {
   const reduceMotion = useReducedMotionPreference()
   const own = useOceanMotion(finalDescent ? 0 : score * 10)
@@ -54,8 +57,8 @@ export default function GameStage({
   const diverTop = useTransform(m.depth, (d) => `${Math.min(1, Math.max(0, d / 10 / MAX_SCORE)) * 55}%`)
 
   return (
-    <div className="pixel-border relative flex min-h-[440px] gap-3 overflow-hidden p-3 sm:min-h-[460px]">
-      <OceanBackground score={score} fixed={false} motion={m} />
+    <div className="pixel-border relative flex min-h-[360px] flex-col gap-3 overflow-hidden p-3 sm:min-h-[420px] sm:p-4 md:min-h-[460px] md:flex-row [@media(max-height:520px)]:min-h-[300px]">
+      <OceanBackground score={score} fixed={false} motion={m} scene={scene} />
 
       {missKey !== undefined && !reduceMotion && (
         <motion.div
@@ -73,14 +76,14 @@ export default function GameStage({
       )}
 
       <div
-        className={`relative z-10 flex-1 space-y-4 ${
+        className={`relative z-10 min-w-0 flex-1 space-y-3 sm:space-y-4 ${
           dive ? 'pointer-events-none invisible opacity-0 transition-[opacity,visibility] duration-200' : ''
         }`}
       >
         {children}
       </div>
 
-      <div className="relative z-10 flex w-20 flex-col items-center">
+      <div className="relative z-10 hidden w-20 flex-col items-center md:flex">
         <motion.div
           className="absolute"
           style={{ top: diverTop }}
