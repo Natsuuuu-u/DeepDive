@@ -45,10 +45,19 @@ interface Props {
   answerText: string
   /** What the player typed, when their spelling was corrected. */
   typedText?: string
+  /** How the typed answer became the accepted one. */
+  correction?: 'auto' | 'confirmed'
   onSkip: () => void
 }
 
-export default function DiveOverlay({ spec, motion: ocean, answerText, typedText, onSkip }: Props) {
+export default function DiveOverlay({
+  spec,
+  motion: ocean,
+  answerText,
+  typedText,
+  correction,
+  onSkip,
+}: Props) {
   const tier = getTier(spec.tierId)
   const cfg = DIVE_TIERS[spec.tierId]
   const hex = TIER_HEX[spec.tierId]
@@ -371,8 +380,17 @@ export default function DiveOverlay({ spec, motion: ocean, answerText, typedText
               <p className="mt-1 max-w-full break-words text-base font-bold text-white drop-shadow sm:text-lg">
                 {answerText}
               </p>
-              {typedText && (
-                <p className="text-[10px] text-sky-300">spelling corrected from “{typedText}”</p>
+              {correction && (
+                <p className="mt-1 max-w-full break-words rounded border border-sky-400/40 bg-black/50 px-2 py-1 text-[10px] text-sky-300">
+                  {correction === 'auto'
+                    ? `Corrected to “${answerText}”!`
+                    : `Confirmed as “${answerText}”`}
+                  {typedText && (
+                    <span className="mt-0.5 block text-[9px] text-slate-300">
+                      You typed “{typedText}”
+                    </span>
+                  )}
+                </p>
               )}
               <p
                 className={`pixel-text mt-2 text-base sm:text-2xl ${special ? 'bg-gradient-to-r from-gold via-coral to-sonar bg-clip-text text-transparent' : ''}`}

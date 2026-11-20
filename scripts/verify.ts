@@ -1,7 +1,8 @@
 /* Logic checks for spelling correction, difficulty, dive math and ocean blending.  Run: npm run verify */
 import { readFileSync } from 'node:fs'
 import { QUESTION_DATABASE } from '../src/data/questionDatabase'
-import { editDistance, evaluateAnswer } from '../src/lib/answers'
+import { editDistance, evaluateAnswer, matchKey, normalize } from '../src/lib/answers'
+import { canCommitAnswer } from '../src/lib/game'
 import {
   ALL_CATEGORIES_ID,
   CATEGORY_GROUPS,
@@ -243,6 +244,201 @@ for (const [answerText, misspelling] of [['Paris', 'Pariss'], ['Jupiter', 'Jupit
       result.answer.text === answerText,
   )
 }
+
+/* -------------------------------------------------------------------------- */
+/* Smart answer recognition                                                   */
+/* -------------------------------------------------------------------------- */
+
+const echolocation = byPrompt('Name an animal that uses echolocation.')
+const bigCat = byPrompt('Name a big cat.')
+const planets = byPrompt('Name a planet in the Solar System.')
+const continents = byPrompt('Name one of the seven continents.')
+const positions = byPrompt('Name a baseball fielding position.')
+const linearSystems = byPrompt('Name an ancient writing system.')
+const council = byPrompt('Name a permanent member of the UN Security Council.')
+const giraffeQuestion = byPrompt('Name a land animal that can weigh over 1,000 kilograms.')
+const pixar = byPrompt('Name a feature film produced by Pixar.')
+const answerOf = (question: Question, input: string) => {
+  const result = evaluateAnswer(question, input)
+  return result.kind === 'none' ? null : result.answer
+}
+const optionTexts = (question: Question, input: string) => {
+  const result = evaluateAnswer(question, input)
+  return result.kind === 'suggest' ? result.options.map((option) => option.text) : []
+}
+
+// 1-3: exact answers, case and whitespace are not meaningful.
+check('recognition: exact answer', kind(ocean, 'Dolphin') === 'exact')
+check('recognition: uppercase answer', kind(ocean, 'DOLPHIN') === 'exact')
+check('recognition: leading and trailing spaces', kind(ocean, '   dolphin   ') === 'exact')
+check('recognition: punctuation and spacing', kind(ocean, '  DOLPHIN!! ' ) === 'exact')
+
+// Normalisation rules.
+check('normalisation: leading articles are ignored', normalize('The Bahamas') === 'bahamas')
+check(
+  'normalisation: meaningful mid-phrase "a" is preserved',
+  normalize('Linear A') === 'linear a' && normalize('Vitamin A') === 'vitamin a',
+)
+check(
+  'normalisation: apostrophes and hyphens',
+  matchKey("O'Brien") === 'obrien' && matchKey('Spider-Man') === 'spider man' && matchKey('Aye-aye') === 'aye aye',
+)
+check('normalisation: accents are folded', matchKey('Guitarrón') === 'guitarron')
+check('normalisation: & reads as and', matchKey('Daisy Jones & The Six') === 'daisy jones and six')
+
+// 4-6: the four edit classes.
+check('recognition: missing letter (Dolpin)', kind(ocean, 'Dolpin') === 'typo')
+check('recognition: extra letter (Octopuss)', kind(ocean, 'Octopuss') === 'typo')
+check('recognition: swapped letters (Doplhin)', kind(ocean, 'Doplhin') === 'typo')
+check('recognition: swapped letters (Shrak)', kind(ocean, 'Shrak') === 'typo')
+check('recognition: substitution (Octupus)', kind(ocean, 'Octupus') === 'typo')
+
+// 7-8: spelling mistakes, including multi-word answers.
+check('recognition: common spelling mistake (Girafe)', answerOf(giraffeQuestion, 'Girafe')?.text === 'Giraffe')
+check('recognition: multi-word answer (Barreleye fis)', answerOf(ocean, 'Barreleye fis')?.text === 'Barreleye fish')
+check('recognition: multi-word typo (Dumbo octpous)', answerOf(ocean, 'Dumbo octpous')?.text === 'Dumbo octopus')
+check('recognition: multi-word transposition (Giant sqiud)', answerOf(ocean, 'Giant sqiud')?.text === 'Giant squid')
+
+// 9: aliases resolve to the same canonical answer and its rarity.
+const aliasA = answerOf(ocean, 'Spookfish')
+const aliasB = answerOf(ocean, 'Barreleye')
+check(
+  'aliases resolve to the canonical answer',
+  aliasA !== null && aliasB !== null &&
+    aliasA.text === 'Barreleye fish' && aliasB.text === 'Barreleye fish' &&
+    aliasA.tier === 'one-in-a-krillion' && aliasA.points === 100,
+)
+check(
+  'alias typos keep the canonical rarity',
+  (() => {
+    const result = evaluateAnswer(ocean, 'Spookfis')
+    return (result.kind === 'typo' || result.kind === 'suggest') &&
+      result.answer.text === 'Barreleye fish' && result.answer.points === 100
+  })(),
+)
+
+// 10: abbreviations.
+check(
+  'recognition: abbreviations (USA / US / U.S.A. / full name)',
+  ['USA', 'US', 'U.S.A.', 'United States of America'].every(
+    (input) => answerOf(council, input)?.text === 'United States',
+  ),
+)
+check('recognition: UK abbreviation', answerOf(council, 'UK')?.text === 'United Kingdom')
+
+// 11: short answers stay strict.
+check('strict short answers: Lion is not corrected from Loin', kind(bigCat, 'Loin') === 'none')
+check('strict short answers: Bat is not corrected from Cat', kind(echolocation, 'Cat') === 'none')
+check('strict short answers: Cat is not corrected from Cats', kind(echolocation, 'Cats') === 'none')
+
+// 12: unrelated input is rejected.
+for (const input of ['banana', 'volcano', 'qqqzzz']) {
+  check(`strict rejection: "${input}"`, kind(ocean, input) === 'none')
+}
+
+// 13: ambiguous fuzzy matches ask instead of awarding points.
+const patcher = evaluateAnswer(positions, 'Patcher')
+check(
+  'ambiguous match offers the close answers instead of auto-accepting',
+  patcher.kind === 'suggest' && patcher.ambiguous &&
+    patcher.options.length >= 2 &&
+    patcher.options.some((option) => option.text === 'Pitcher') &&
+    patcher.options.some((option) => option.text === 'Catcher'),
+  patcher.kind === 'suggest' ? patcher.options.map((option) => option.text).join(', ') : '',
+)
+const linearAmbiguous = evaluateAnswer(linearSystems, 'Linear')
+check(
+  'ambiguous match (Linear -> Linear A / Linear B) pauses for confirmation',
+  linearAmbiguous.kind === 'suggest' &&
+    linearAmbiguous.ambiguous &&
+    optionTexts(linearSystems, 'Linear').includes('Linear A') &&
+    optionTexts(linearSystems, 'Linear').includes('Linear B'),
+)
+
+// 14: several accepted answers with different rarities never cross-award.
+const barreleyeTypo = evaluateAnswer(ocean, 'Barreleye fis')
+const dolphinTypo = evaluateAnswer(ocean, 'Dolpin')
+const octopusTypo = evaluateAnswer(ocean, 'Octupus')
+check(
+  'typod Barreleye keeps its own rarity (100 pts)',
+  barreleyeTypo.kind === 'typo' && barreleyeTypo.answer.tier === 'one-in-a-krillion' &&
+    barreleyeTypo.answer.points === 100,
+)
+check(
+  'typod Dolphin keeps its own rarity (15 pts)',
+  dolphinTypo.kind === 'typo' && dolphinTypo.answer.tier === 'too-clever' &&
+    dolphinTypo.answer.points === 15,
+)
+check(
+  'typod Octopus keeps its own rarity (30 pts)',
+  octopusTypo.kind === 'typo' && octopusTypo.answer.tier === 'schooler' &&
+    octopusTypo.answer.points === 30,
+)
+
+// Plurals and irregular plurals are legitimate answers, not "corrections".
+const pluralAnswers: [string, string][] = [
+  ['Sharks', 'Shark'],
+  ['Dolphins', 'Dolphin'],
+  ['Giant squids', 'Giant squid'],
+  ['Octopi', 'Octopus'],
+  ['Octopuses', 'Octopus'],
+]
+for (const [input, expected] of pluralAnswers) {
+  check(`plural resolves exactly: "${input}" -> ${expected}`, kind(ocean, input) === 'exact' && answerOf(ocean, input)?.text === expected)
+}
+
+// 15: a correct answer can only be committed while its question is live.
+const liveGame = {
+  phase: 'playing' as const,
+  questionIds: ['q1', 'q2'],
+  questionIndex: 0,
+  questionDeadline: 10_000,
+}
+check('commit guard: live answer can be recorded', canCommitAnswer(liveGame, 'q1', 9_999))
+check('commit guard: a second submit after feedback is ignored', !canCommitAnswer({ ...liveGame, phase: 'feedback' }, 'q1', 9_999))
+check('commit guard: a finished dive is ignored', !canCommitAnswer({ ...liveGame, phase: 'complete' }, 'q1', 9_999))
+check('commit guard: another question cannot be credited', !canCommitAnswer(liveGame, 'q2', 9_999))
+check('commit guard: expired question cannot be credited', !canCommitAnswer(liveGame, 'q1', 10_000))
+check(
+  'commit guard: suggestion pause extends the clock',
+  canCommitAnswer(liveGame, 'q1', 15_000, 6_000) && !canCommitAnswer(liveGame, 'q1', 16_001, 6_000),
+)
+
+// 16: confirmation is the only way an uncertain suggestion can score, and
+// every option carries the rarity of its own canonical answer.
+const linearOptions = evaluateAnswer(linearSystems, 'Linear')
+check(
+  'suggestion options keep their individual rarity',
+  linearOptions.kind === 'suggest' &&
+    linearOptions.options.every((option) =>
+      RARITY_TIERS.some((tier) => tier.id === option.tier && tier.points === option.points),
+    ) &&
+    linearOptions.options.find((option) => option.text === 'Linear A')?.points === 30 &&
+    linearOptions.options.find((option) => option.text === 'Linear B')?.points === 15,
+)
+check(
+  'uncertain matches are never reported as automatic typos',
+  kind(linearSystems, 'Linear') === 'suggest' &&
+    kind(planets, 'Venue') === 'suggest' &&
+    kind(ocean, 'While') === 'suggest' &&
+    kind(ocean, 'Share') === 'suggest',
+)
+check(
+  'common words are not silently rewritten (While / Share / Child)',
+  kind(ocean, 'While') !== 'typo' && kind(ocean, 'Share') !== 'typo' && kind(ocean, 'Child') === 'none',
+)
+
+// 17: every valid answer stays valid, and real answers are never rewritten
+// into a different accepted answer.
+check('valid answers: Whale stays Whale', answerOf(ocean, 'Whale')?.text === 'Whale')
+check('valid answers: Whale is not converted to another ocean answer', kind(echolocation, 'Whale') === 'none')
+check('valid answers: Austria is not corrected to Australia', kind(continents, 'Austria') === 'none')
+check('valid answers: Nigeria stays Nigeria, never Niger', kind(africa, 'Nigeria') === 'exact' && kind(africa, 'Niger') === 'none')
+check('valid answers: exact alias beats fuzzy', answerOf(africa, 'Nigeria')?.text === 'Nigeria')
+
+// Numbers (years, counts) are never fuzzy-matched.
+check('numbers: exact numeric answer works', kind(pixar, 'Toy Story 3') === 'exact')
+check('numbers: neighbouring number is rejected', kind(pixar, 'Toy Story 2') === 'none')
 
 // --- expanded database: 500 questions, fixed difficulty split, data integrity
 const EXPECTED_TOTAL = 500

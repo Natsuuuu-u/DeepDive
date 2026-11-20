@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ANSWER_FEEDBACK_MS, GAME_QUESTION_COUNT, QUESTION_TIME_SECONDS } from '@/lib/gameConstants'
-import { calculateScore } from '@/lib/game'
+import { calculateScore, canCommitAnswer } from '@/lib/game'
 import { getDepthMeters } from '@/lib/depth'
 import {
   findQuestionById,
@@ -324,8 +324,13 @@ function advanceAfterFeedback(game: SavedGameState, now: number): SavedGameState
 export interface PendingSuggestion {
   questionId: string
   typed: string
+  /** Closest suggestion; also the default the player confirms. */
   answer: AcceptedAnswer
+  /** Up to three candidate answers, closest first. */
+  options: AcceptedAnswer[]
   ambiguous: boolean
+  /** Wall-clock time the question clock was paused for this prompt. */
+  pausedAt: number
 }
 
 export function useTriviaGame(mode: GameMode, options: TriviaGameOptions = {}) {
@@ -348,6 +353,8 @@ export function useTriviaGame(mode: GameMode, options: TriviaGameOptions = {}) {
   )
   const introOpenRef = useRef(introOpen)
   introOpenRef.current = introOpen
+  const suggestionRef = useRef(suggestion)
+  suggestionRef.current = suggestion
   /** Set when the player abandons the dive so nothing is persisted afterwards. */
   const exitedRef = useRef(false)
 
@@ -436,15 +443,13 @@ export function useTriviaGame(mode: GameMode, options: TriviaGameOptions = {}) {
       matched: AcceptedAnswer,
       given: string,
       corrected: AnswerResult['corrected'],
+      /** Clock time spent paused in a suggestion prompt. */
+      extensionMs = 0,
     ) => {
       const now = Date.now()
       const diveMs = getDiveDurationMs(matched.tier, reduceMotionRef.current)
       setGame((current) => {
-        if (
-          current.phase !== 'playing' ||
-          current.questionIds[current.questionIndex] !== questionId ||
-          now >= current.questionDeadline
-        ) return current
+        if (!canCommitAnswer(current, questionId, now, extensionMs)) return current
         const result: AnswerResult = {
           questionId,
           given,
@@ -455,6 +460,7 @@ export function useTriviaGame(mode: GameMode, options: TriviaGameOptions = {}) {
         }
         return {
           ...current,
+          questionDeadline: current.questionDeadline + extensionMs,
           results: [...current.results, result],
           phase: 'feedback',
           // The next question appears only after the dive sequence has played.
@@ -469,6 +475,9 @@ export function useTriviaGame(mode: GameMode, options: TriviaGameOptions = {}) {
 
   const submitAnswer = useCallback((value: string) => {
     if (introOpenRef.current) return
+    // One decision at a time: while a suggestion awaits confirmation the input
+    // is disabled and further submits are ignored.
+    if (suggestionRef.current) return
     if (game.phase !== 'playing' || !question) return
     if (Date.now() >= game.questionDeadline) return
 
@@ -483,12 +492,15 @@ export function useTriviaGame(mode: GameMode, options: TriviaGameOptions = {}) {
         commitCorrect(question.id, evaluation.answer, value, 'auto')
         return
       case 'suggest':
-        // Outcome C: ask first; no points until the player confirms.
+        // Outcome C: ask first; no points until the player confirms. The
+        // question clock pauses so deciding does not cost remaining time.
         setSuggestion({
           questionId: question.id,
           typed: value,
           answer: evaluation.answer,
+          options: evaluation.options,
           ambiguous: evaluation.ambiguous,
+          pausedAt: Date.now(),
         })
         setGame((current) =>
           current.phase === 'playing' ? { ...current, message: null } : current,
@@ -504,17 +516,38 @@ export function useTriviaGame(mode: GameMode, options: TriviaGameOptions = {}) {
     }
   }, [commitCorrect, game.phase, game.questionDeadline, question])
 
-  const confirmSuggestion = useCallback(() => {
+  const confirmSuggestion = useCallback((chosen?: AcceptedAnswer) => {
     if (!suggestion) return
-    commitCorrect(suggestion.questionId, suggestion.answer, suggestion.typed, 'confirmed')
+    const answer =
+      chosen &&
+      suggestion.options.some(
+        (option) => option.text === chosen.text && option.tier === chosen.tier,
+      )
+        ? chosen
+        : suggestion.answer
+    commitCorrect(
+      suggestion.questionId,
+      answer,
+      suggestion.typed,
+      'confirmed',
+      Math.max(0, Date.now() - suggestion.pausedAt),
+    )
   }, [commitCorrect, suggestion])
 
   const dismissSuggestion = useCallback(() => {
+    if (!suggestion) return
+    const pausedFor = Math.max(0, Date.now() - suggestion.pausedAt)
     setSuggestion(null)
     setGame((current) =>
-      current.phase === 'playing' ? { ...current, message: 'No problem — try another answer.' } : current,
+      current.phase === 'playing'
+        ? {
+            ...current,
+            questionDeadline: current.questionDeadline + pausedFor,
+            message: 'No problem — try another answer.',
+          }
+        : current,
     )
-  }, [])
+  }, [suggestion])
 
   /** Ends the dive early (the answer and depth are already recorded). */
   const skipDive = useCallback(() => {

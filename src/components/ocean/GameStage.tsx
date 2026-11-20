@@ -19,6 +19,7 @@ interface Props {
   dive?: DiveSpec | null
   diveAnswerText?: string
   diveTypedText?: string
+  diveCorrection?: 'auto' | 'confirmed'
   onSkipDive?: () => void
   /** Changes when a miss is shown; renders a soft coral ripple behind the cards. */
   missKey?: number
@@ -35,6 +36,7 @@ export default function GameStage({
   dive = null,
   diveAnswerText = '',
   diveTypedText,
+  diveCorrection,
   onSkipDive,
   missKey,
   scene = true,
@@ -102,6 +104,7 @@ export default function GameStage({
           motion={m}
           answerText={diveAnswerText}
           typedText={diveTypedText}
+          correction={diveCorrection}
           onSkip={onSkipDive ?? (() => undefined)}
         />
       )}

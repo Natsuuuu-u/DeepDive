@@ -79,6 +79,10 @@ export default function GamePreview({
   useEffect(() => {
     setPrefill(null)
   }, [question?.id, game.runId])
+  const [suggestionChoice, setSuggestionChoice] = useState(0)
+  useEffect(() => {
+    setSuggestionChoice(0)
+  }, [suggestion])
   const suggestionRef = useRef<HTMLDivElement>(null)
   const suggestionActionsRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -134,9 +138,10 @@ export default function GamePreview({
     if (!dive) ocean.depth.set(score * 10)
   }, [dive, ocean, score])
 
+  // The clock pauses while the player decides on a suggested answer.
   const secondsLeft = useDeadlineTimer(
     game.questionDeadline,
-    game.phase === 'playing',
+    game.phase === 'playing' && !suggestion,
     expireQuestion,
   )
 
@@ -224,6 +229,7 @@ export default function GamePreview({
           dive={dive}
           diveAnswerText={questionResult?.matched?.text}
           diveTypedText={questionResult?.corrected ? questionResult.given : undefined}
+          diveCorrection={questionResult?.corrected}
           onSkipDive={skipDive}
           missKey={game.phase === 'feedback' && !questionResult?.matched ? game.questionIndex : undefined}
         >
@@ -244,8 +250,8 @@ export default function GamePreview({
               />
               <AnswerInput
                 onSubmit={submitAnswer}
-                disabled={game.phase !== 'playing' || introOpen}
-                autoFocus={!introOpen}
+                disabled={game.phase !== 'playing' || introOpen || !!suggestion}
+                autoFocus={!introOpen && !suggestion}
                 resetKey={question.id}
                 prefill={prefill}
                 placeholder="Type answer..."
@@ -260,28 +266,62 @@ export default function GamePreview({
 
             {suggestion && game.phase === 'playing' && (
               <div ref={suggestionRef}>
-                <PixelPanel role="group" aria-label="Spelling suggestion" className="space-y-3 text-sm">
+                <PixelPanel role="group" aria-label="Answer suggestion" className="space-y-3 text-sm">
                   <p className="flex items-start gap-2 text-sky-300">
                     <SpellCheck className="mt-0.5 shrink-0" size={18} aria-hidden />
                     <span>
-                      {suggestion.ambiguous ? 'Not sure what you meant. ' : 'Close! '}
-                      Did you mean{' '}
-                      <strong className="text-white">“{suggestion.answer.text}”</strong>?
+                      {suggestion.ambiguous || suggestion.options.length > 1
+                        ? 'Which answer did you mean?'
+                        : 'Did you mean…?'}
                     </span>
                   </p>
+                  <fieldset className="space-y-2">
+                    <legend className="sr-only">Suggested answers</legend>
+                    {suggestion.options.map((option, index) => {
+                      const active = index === suggestionChoice
+                      return (
+                        <label
+                          key={option.text}
+                          className={`flex min-h-[44px] w-full touch-manipulation cursor-pointer items-center justify-between gap-2 border px-3 py-2 text-left transition-colors ${
+                            active
+                              ? 'border-sonar bg-sonar/15 text-white'
+                              : 'border-white/20 bg-black/30 text-slate-300 hover:border-white/40'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="answer-suggestion"
+                            value={option.text}
+                            checked={active}
+                            onChange={() => setSuggestionChoice(index)}
+                            className="sr-only"
+                          />
+                          <span className="break-words font-semibold">{option.text}</span>
+                          <Check
+                            size={16}
+                            className={`shrink-0 ${active ? 'text-sonar' : 'opacity-0'}`}
+                            aria-hidden
+                          />
+                        </label>
+                      )
+                    })}
+                  </fieldset>
                   <p className="text-xs text-slate-300">
-                    You typed “{suggestion.typed}”. No points are awarded unless you confirm.
+                    You typed “{suggestion.typed}”. The timer is paused — no points are awarded
+                    unless you confirm.
                   </p>
                   <div
                     ref={suggestionActionsRef}
                     className="flex scroll-mb-16 flex-col gap-2 sm:flex-row sm:flex-wrap"
                   >
                     <PixelButton
-                      onClick={confirmSuggestion}
+                      onClick={() =>
+                        confirmSuggestion(suggestion.options[suggestionChoice] ?? suggestion.answer)
+                      }
                       icon={<Check size={14} />}
                       className="w-full px-2 sm:w-auto"
                     >
-                      Yes, that&apos;s it
+                      Confirm
                     </PixelButton>
                     <PixelButton
                       variant="secondary"
@@ -292,7 +332,7 @@ export default function GamePreview({
                       icon={<X size={14} />}
                       className="w-full px-2 sm:w-auto"
                     >
-                      No
+                      Try Again
                     </PixelButton>
                   </div>
                 </PixelPanel>
